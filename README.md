@@ -83,7 +83,7 @@ geminiproj/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/AjGeminiProj.git
+git clone https://github.com/ajrajthala/AjGeminiProj.git
 cd AjGeminiProj
 ```
 
@@ -206,8 +206,8 @@ This project is open source and available under the **MIT License**. See the [LI
 ## Questions & Support
 
 - 📖 **Documentation:** Check the inline code comments and module README files
-- 🐛 **Found a bug?** Open an [Issue](https://github.com/yourusername/AjGeminiProj/issues)
-- 💭 **Have a question?** Start a [Discussion](https://github.com/yourusername/AjGeminiProj/discussions)
+- 🐛 **Found a bug?** Open an [Issue](https://github.com/ajrajthala/AjGeminiProj/issues)
+- 💭 **Have a question?** Start a [Discussion](https://github.com/ajrajthala/AjGeminiProj/discussions)
 
 ---
 
