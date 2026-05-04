@@ -1,0 +1,86 @@
+# ============================================================
+# Android
+# ============================================================
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle files
+.gradle/
+build/
+**/build/
+
+# Local configuration
+local.properties
+keystore.properties
+*.keystore
+*.jks
+
+# ============================================================
+# IntelliJ / Android Studio
+# ============================================================
+*.iml
+.idea/
+*.iws
+*.ipr
+.DS_Store
+
+# Captures folder
+captures/
+
+# Lint
+lint/tmp/
+lint/reports/
+
+# ============================================================
+# Kotlin
+# ============================================================
+.kotlin/
+*.kotlin_module
+
+# ============================================================
+# Secrets / API Keys — never commit these
+# ============================================================
+google-services.json
+google-services-debug.json
+secrets.properties
+*.env
+.env.*
+
+# ============================================================
+# Gradle wrapper (keep gradlew scripts, ignore jar)
+# ============================================================
+gradle/wrapper/gradle-wrapper.jar
+
+# ============================================================
+# Room database exports (optional — commit if you want schema history)
+# ============================================================
+# app/schemas/
+
+# ============================================================
+# Navigation / Generated
+# ============================================================
+**/generated/
+**/intermediates/
+**/outputs/
+**/tmp/
+
+# ============================================================
+# OS
+# ============================================================
+Thumbs.db
+Desktop.ini
+
+# ============================================================
+# Test results
+# ============================================================
+test-results/
+jacoco/
