@@ -17,15 +17,20 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 
 ### Screenshots
 
-| Chat Screen | Chat History | Tablet View |
+| Chat Screen | Chat History | Image Analysis |
 | :---: | :---: | :---: |
-| ![Chat Screen](docs/screenshots/chat_screen.png) | ![Chat History](docs/screenshots/chat_history.png) | ![Tablet View](docs/screenshots/tablet_view.png) |
+| ![Chat Screen](docs/screenshots/chat_screen.png) | ![Chat History](docs/screenshots/chat_history.png) | ![Image Analysis](docs/screenshots/image_analysis_screen.png) |
+
+#### Tablet View
+<p align="center">
+  <img src="docs/screenshots/tablet_view.png" alt="Tablet View" width="800"/>
+</p>
 
 ### Demo
 
-<p align="center">
-  <img src="docs/demo.gif" alt="App Demo" width="300"/>
-</p>
+| Text Chat | Image Analysis |
+| :---: | :---: |
+| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> |
 
 ## Tech Stack
 

@@ -1,5 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.domain
 
+import android.graphics.Bitmap
 import com.aj.geminiproj.core.model.AiResult
 import com.aj.geminiproj.core.model.ChatMessage
 import com.aj.geminiproj.core.model.StreamState
@@ -19,5 +20,17 @@ interface AiRepository {
     suspend fun generateConversationTitle(
         message: List<ChatMessage>,
     ): AiResult<String>
+
+    suspend fun sendMessageWithImage(
+        message: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): AiResult<String>
+
+    fun sendMessageWithImageStream(
+        message: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): Flow<StreamState<String>>
 
 }

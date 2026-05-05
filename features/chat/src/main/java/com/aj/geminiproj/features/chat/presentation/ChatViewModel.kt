@@ -15,6 +15,7 @@ import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithImageStreamUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ class ChatViewModel(
     private val conversationId: String,
     private val sendMessageUseCase: SendMessageUseCase,
     private val sendMessageStreamUseCase: SendMessageStreamUseCase,
+    private val sendMessageWithImageStreamUseCase: SendMessageWithImageStreamUseCase,
     private val saveConversationUseCase: SaveConversationUseCase,
     private val saveMessageUseCase: SaveMessageUseCase,
     private val getConversationUseCase: GetConversationUseCase,
@@ -70,6 +72,22 @@ class ChatViewModel(
             ChatUiEvent.OnDismissError -> {
                 _uiState.update { it.copy(error = null) }
             }
+
+            is ChatUiEvent.OnImageSelected -> {
+                _uiState.update {
+                    it.copy(
+                        selectedImageUri = event.imageUri,
+                        selectedImageBitmap = event.bitmap
+                    )
+                }
+            }
+
+            ChatUiEvent.OnRemoveImage -> _uiState.update {
+                it.copy(
+                    selectedImageUri = null,
+                    selectedImageBitmap = null
+                )
+            }
         }
     }
 
@@ -106,7 +124,10 @@ class ChatViewModel(
 
     private fun sendMessage(addMessage: Boolean = true) {
         val messageText = _inputText.value.trim()
-        if (messageText.isBlank()) return
+        val bitmap = _uiState.value.selectedImageBitmap
+        val imageUri = _uiState.value.selectedImageUri?.toString()
+
+        if (messageText.isBlank() && bitmap == null) return
 
         // Resolve a real UUID if this is a new conversation
         val currentConversationId = _uiState.value.conversationId.let { id ->
@@ -130,13 +151,18 @@ class ChatViewModel(
                 content = messageText,
                 role = MessageRole.USER,
                 status = MessageStatus.SENT,
+                imageUri = imageUri,
                 timeStamp = System.currentTimeMillis()
             )
 
             _inputText.update { "" }
 
             _uiState.update { state ->
-                state.copy(messages = state.messages + userMessage)
+                state.copy(
+                    messages = state.messages + userMessage,
+                    selectedImageBitmap = null,
+                    selectedImageUri = null,
+                )
             }
             _uiEffect.send(ChatUiEffect.ScrollToBottom)
 
@@ -145,10 +171,24 @@ class ChatViewModel(
                 saveConversationAfterMessage(currentConversationId, userMessage)
             }
             // Send message to AI
-            sendMessageStreamUseCase(messageText, currentConversationId, _uiState.value.messages)
-                .collect { streamState ->
-                    handleStreamState(streamState, currentConversationId)
-                }
+            val stream = if (bitmap != null) {
+                sendMessageWithImageStreamUseCase(
+                    message = messageText,
+                    bitmap = bitmap,
+                    conversationId = currentConversationId,
+                    conversationHistory = _uiState.value.messages
+                )
+            } else {
+                sendMessageStreamUseCase(
+                    messageText,
+                    currentConversationId,
+                    _uiState.value.messages
+                )
+            }
+
+            stream.collect { streamState ->
+                handleStreamState(streamState, currentConversationId)
+            }
         }
     }
 

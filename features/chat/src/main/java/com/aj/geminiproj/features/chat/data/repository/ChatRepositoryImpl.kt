@@ -1,5 +1,6 @@
 package com.aj.geminiproj.features.chat.data.repository
 
+import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.data.ConversationStore
 import com.aj.geminiproj.core.model.AiResult
@@ -32,6 +33,24 @@ class ChatRepositoryImpl(
         conversationHistory: List<ChatMessage>,
     ): Flow<StreamState<String>> {
         return aiRepository.sendMessageStream(message, conversationHistory)
+    }
+
+    override suspend fun sendMessageWithImage(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>
+    ): AiResult<String> {
+       return aiRepository.sendMessageWithImage(message, bitmap, conversationHistory)
+    }
+
+    override suspend fun sendMessageWithImageStream(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>
+    ): Flow<StreamState<String>> {
+       return aiRepository.sendMessageWithImageStream(message, bitmap, conversationHistory)
     }
 
     override suspend fun getConversation(conversationId: String): ChatConversation {

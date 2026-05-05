@@ -32,7 +32,8 @@ fun ChatMessage.toEntity(conversationId: String): MessageEntity =
         content = content,
         role = role.name,
         status = status.name,
-        timeStamp = timeStamp
+        timeStamp = timeStamp,
+        imageUri = imageUri
     )
 
 fun MessageEntity.toDomain(): ChatMessage =
@@ -41,5 +42,6 @@ fun MessageEntity.toDomain(): ChatMessage =
         content = content,
         role = MessageRole.valueOf(role),
         status = MessageStatus.valueOf(status),
-        timeStamp = timeStamp
+        timeStamp = timeStamp,
+        imageUri = imageUri
     )
