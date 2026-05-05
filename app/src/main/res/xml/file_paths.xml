@@ -3,4 +3,7 @@
     <cache-path
         name="camera_images"
         path="." />
+    <files-path
+        name="chat_images"
+        path="." />
 </paths>

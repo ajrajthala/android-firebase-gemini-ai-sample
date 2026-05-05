@@ -21,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.aj.geminiproj.core.model.ChatMessage
 import com.aj.geminiproj.core.model.MessageRole
 import com.aj.geminiproj.core.model.MessageStatus
@@ -40,6 +42,7 @@ fun MessageItem(message: ChatMessage, modifier: Modifier = Modifier, isTablet: B
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
+        message.imageUri?.let { Log.d("MessageItem", "Loading image: $it") }
         Box(
             modifier = Modifier
                 .widthIn(max = maxBubbleWidth)
@@ -61,11 +64,14 @@ fun MessageItem(message: ChatMessage, modifier: Modifier = Modifier, isTablet: B
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 message.imageUri?.let { uri ->
                     AsyncImage(
-                        model = uri,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(uri)
+                            .crossfade(true)
+                            .build(),
                         contentDescription = "Message Image",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 240.dp)
+                            .heightIn(min = 120.dp, max = 240.dp)
                             .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop
                     )

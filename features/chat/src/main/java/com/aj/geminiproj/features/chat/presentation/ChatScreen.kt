@@ -115,11 +115,14 @@ fun ChatScreen(
     val galleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             uri?.let {
-                val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream)
-                }
-                if (bitmap != null) {
-                    viewModel.onEvent(ChatUiEvent.OnImageSelected(uri, bitmap))
+                val persistentUri = copyUriToInternalStorage(context, it)
+                persistentUri?.let { pUri ->
+                    val bitmap = context.contentResolver.openInputStream(pUri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream)
+                    }
+                    if (bitmap != null) {
+                        viewModel.onEvent(ChatUiEvent.OnImageSelected(pUri, bitmap))
+                    }
                 }
             }
         }
@@ -317,10 +320,26 @@ fun ChatScreen(
 }
 
 private fun createCameraImageUri(context: android.content.Context): Uri {
-    val imageFile = File(context.cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
+    val imageFile = File(context.filesDir, "camera_image_${System.currentTimeMillis()}.jpg")
     return FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
         imageFile
     )
+}
+
+private fun copyUriToInternalStorage(context: android.content.Context, uri: Uri): Uri? {
+    val fileName = "chat_image_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, fileName)
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        Uri.fromFile(file)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }
