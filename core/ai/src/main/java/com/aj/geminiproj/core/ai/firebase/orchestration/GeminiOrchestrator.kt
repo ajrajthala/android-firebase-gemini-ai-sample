@@ -161,6 +161,16 @@ class GeminiOrchestrator(
                                 isPermissionError = true
                             )
                         )
+
+                        is ToolResult.NeedsConfirmation -> {
+                            // Treat as completed, Gemini should handle the clarification naturally via the FunctionResponsePart we feed back below.
+                            emit(
+                                ChatStreamEvent.ToolCompleted(
+                                    functionName = functionName,
+                                    summary = result.message
+                                )
+                            )
+                        }
                     }
                     // Feed result back to Gemini regardless of outcome so it can decide how to proceed (try again, skip tool, etc)
                     functionResponseParts.add(mapper.toFunctionResponsePart(functionName, result))

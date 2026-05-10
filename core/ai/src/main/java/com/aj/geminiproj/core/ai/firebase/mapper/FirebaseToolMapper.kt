@@ -61,6 +61,13 @@ class FirebaseToolMapper {
                 "error" to result.message,
                 "permission" to result.permission
             )
+
+            is ToolResult.NeedsConfirmation -> mapOf(
+                "needs_confirmation" to true,
+                "message" to result.message,
+                "options" to result.options,
+                "context" to result.context
+            )
         }
 
         return FunctionResponsePart(
