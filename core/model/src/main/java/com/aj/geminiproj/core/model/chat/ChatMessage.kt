@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.model
+package com.aj.geminiproj.core.model.chat
 
 import kotlinx.serialization.Serializable
 

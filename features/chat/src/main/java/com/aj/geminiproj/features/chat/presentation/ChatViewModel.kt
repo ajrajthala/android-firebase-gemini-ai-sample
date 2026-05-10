@@ -3,10 +3,10 @@ package com.aj.geminiproj.features.chat.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.core.model.StreamState
 import com.aj.geminiproj.features.chat.domain.usecase.DeleteConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.GenerateConversationTitleUseCase

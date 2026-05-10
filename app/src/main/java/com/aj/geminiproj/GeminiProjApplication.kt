@@ -1,7 +1,7 @@
 package com.aj.geminiproj
 
 import android.app.Application
-import com.aj.geminiproj.core.ai.di.aiModule
+import com.aj.geminiproj.core.ai.firebase.di.aiModule
 import com.aj.geminiproj.core.data.di.dataModule
 import com.aj.geminiproj.features.chat.di.chatModule
 import com.aj.geminiproj.navigation.di.navigationModule

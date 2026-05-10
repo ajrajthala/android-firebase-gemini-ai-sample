@@ -44,9 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.features.chat.presentation.components.ChatInput
 import com.aj.geminiproj.features.chat.presentation.components.MessageItem
 import com.aj.geminiproj.ui.util.isTablet

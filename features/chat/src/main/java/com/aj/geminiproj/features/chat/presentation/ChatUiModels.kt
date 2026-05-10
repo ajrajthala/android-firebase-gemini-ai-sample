@@ -1,6 +1,6 @@
 package com.aj.geminiproj.features.chat.presentation
 
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatMessage
 
 
 data class ChatUiState(

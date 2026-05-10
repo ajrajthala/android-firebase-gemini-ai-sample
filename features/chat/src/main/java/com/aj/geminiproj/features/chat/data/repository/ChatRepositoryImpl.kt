@@ -3,14 +3,11 @@ package com.aj.geminiproj.features.chat.data.repository
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.data.ConversationStore
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.StreamState
 import com.aj.geminiproj.features.chat.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 
 class ChatRepositoryImpl(
     private val aiRepository: AiRepository,

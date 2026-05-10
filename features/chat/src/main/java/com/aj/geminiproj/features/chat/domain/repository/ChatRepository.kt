@@ -1,8 +1,8 @@
 package com.aj.geminiproj.features.chat.domain.repository
 
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
 import com.aj.geminiproj.core.model.StreamState
 import kotlinx.coroutines.flow.Flow
 

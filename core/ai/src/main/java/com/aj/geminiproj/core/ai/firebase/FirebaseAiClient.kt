@@ -1,7 +1,7 @@
 package com.aj.geminiproj.core.ai.firebase
 
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content

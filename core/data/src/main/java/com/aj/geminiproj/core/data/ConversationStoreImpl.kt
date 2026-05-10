@@ -4,8 +4,8 @@ import com.aj.geminiproj.core.data.dao.ConversationDao
 import com.aj.geminiproj.core.data.dao.MessageDao
 import com.aj.geminiproj.core.data.db.mapper.toDomain
 import com.aj.geminiproj.core.data.db.mapper.toEntity
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
