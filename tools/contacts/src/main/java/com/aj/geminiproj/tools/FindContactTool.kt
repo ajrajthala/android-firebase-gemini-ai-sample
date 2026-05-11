@@ -100,7 +100,7 @@ class FindContactTool(
                     }
                 }.toMap()
                 ToolResult.NeedsConfirmation(
-                    message = "Multiple contacts found matching the name '$name'. Please confirm which contact you meant.",
+                    message = "Multiple contacts found matching the name '$name'. Ask the user to confirm which one they mean before continuing.",
                     options = options,
                     context = contactsContext
                 )

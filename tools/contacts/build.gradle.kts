@@ -3,10 +3,12 @@ plugins {
 }
 
 android {
-    namespace = "com.aj.geminiproj.tools"
+    namespace = "com.aj.geminiproj.tools.contacts"
 }
 
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:data"))
+    implementation(project(":core:common"))
+    implementation(libs.koin.android)
 }
