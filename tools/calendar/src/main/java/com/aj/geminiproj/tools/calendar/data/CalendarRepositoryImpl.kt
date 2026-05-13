@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.data.calendar
+package com.aj.geminiproj.tools.calendar.data
 
 import android.content.ContentUris
 import android.content.ContentValues
@@ -6,8 +6,10 @@ import android.content.Context
 import android.provider.CalendarContract
 import com.aj.geminiproj.core.model.calendar.CalendarEvent
 import com.aj.geminiproj.core.model.calendar.CreateEventRequest
+import com.aj.geminiproj.tools.calendar.domain.repository.CalendarRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.TimeZone
 
 class CalendarRepositoryImpl (private val context: Context): CalendarRepository {
     override suspend fun getEventsForDay(
@@ -114,8 +116,10 @@ class CalendarRepositoryImpl (private val context: Context): CalendarRepository 
                 put(CalendarContract.Events.TITLE, request.title)
                 put(CalendarContract.Events.DTSTART, request.startTime)
                 put(CalendarContract.Events.DTEND, request.endTime)
-                put(CalendarContract.Events.EVENT_TIMEZONE,
-                    java.util.TimeZone.getDefault().id)
+                put(
+                    CalendarContract.Events.EVENT_TIMEZONE,
+                    TimeZone.getDefault().id
+                )
                 request.location?.let {
                     put(CalendarContract.Events.EVENT_LOCATION, it)
                 }

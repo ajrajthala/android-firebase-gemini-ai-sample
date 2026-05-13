@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.data.calendar
+package com.aj.geminiproj.tools.calendar.domain.repository
 
 import com.aj.geminiproj.core.model.calendar.CalendarEvent
 import com.aj.geminiproj.core.model.calendar.CreateEventRequest

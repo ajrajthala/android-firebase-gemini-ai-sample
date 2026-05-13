@@ -34,3 +34,4 @@ include(":features:image")
 include(":features:text")
 
 include(":tools:contacts")
+include(":tools:calendar")
