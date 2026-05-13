@@ -1,8 +1,8 @@
-package com.aj.geminiproj.tools
+package com.aj.geminiproj.tools.contacts.tool
 
 import android.Manifest
 import android.util.Log
-import com.aj.geminiproj.core.data.contacts.ContactRepository
+import com.aj.geminiproj.tools.contacts.domain.repository.ContactRepository
 import com.aj.geminiproj.core.model.permission.PermissionManager
 import com.aj.geminiproj.core.model.permission.PermissionStatus
 import com.aj.geminiproj.core.model.tool.ParameterType
@@ -10,7 +10,6 @@ import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.core.model.tool.ToolDefinition
 import com.aj.geminiproj.core.model.tool.ToolParameter
 import com.aj.geminiproj.core.model.tool.ToolResult
-import kotlin.collections.buildMap
 
 class FindContactTool(
     private val contactRepository: ContactRepository,

@@ -1,32 +1,12 @@
-package com.aj.geminiproj.core.data.contacts
+package com.aj.geminiproj.tools.contacts.data.datasource
 
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
-import com.aj.geminiproj.core.model.contacts.ContactInfo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.aj.geminiproj.tools.contacts.domain.model.ContactInfo
 
-class ContactRepositoryImpl(private val context: Context) : ContactRepository {
-
-    override suspend fun findContactsByName(name: String): List<ContactInfo> =
-        withContext(Dispatchers.IO) {
-            val contactIds = resolveAllContactIds(name)
-
-            contactIds.map { contactId ->
-                val email = resolveEmail(contactId)
-                val phone = resolvePhone(contactId)
-                val displayName = resolveDisplayName(contactId) ?: name
-
-                ContactInfo(
-                    displayName = displayName,
-                    email = email,
-                    phone = phone
-                )
-            }
-        }
-
+class AndroidContactsDataSource(private val context: Context) : ContactsDataSource {
     private fun resolveAllContactIds(name: String): List<String> {
         val filterUri: Uri =
             Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_FILTER_URI, Uri.encode(name))
@@ -140,4 +120,17 @@ class ContactRepositoryImpl(private val context: Context) : ContactRepository {
             } else null
         }
     }
+
+    override suspend fun findByName(name: String): List<ContactInfo> =
+        resolveAllContactIds(name).map { contactId ->
+            val email = resolveEmail(contactId)
+            val phone = resolvePhone(contactId)
+            val displayName = resolveDisplayName(contactId) ?: name
+
+            ContactInfo(
+                displayName = displayName,
+                email = email,
+                phone = phone
+            )
+        }
 }

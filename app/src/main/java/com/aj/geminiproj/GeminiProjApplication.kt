@@ -6,7 +6,7 @@ import com.aj.geminiproj.core.common.di.commonModule
 import com.aj.geminiproj.core.data.di.dataModule
 import com.aj.geminiproj.features.chat.di.chatModule
 import com.aj.geminiproj.navigation.di.navigationModule
-import com.aj.geminiproj.tools.di.contactsToolModule
+import com.aj.geminiproj.tools.contacts.di.contactsToolModule
 import com.google.firebase.FirebaseApp
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin

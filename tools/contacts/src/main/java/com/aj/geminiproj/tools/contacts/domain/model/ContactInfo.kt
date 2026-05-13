@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.model.contacts
+package com.aj.geminiproj.tools.contacts.domain.model
 
 data class ContactInfo(
     val displayName: String,
