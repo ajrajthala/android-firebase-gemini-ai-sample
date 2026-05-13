@@ -2,18 +2,24 @@ package com.aj.geminiproj.core.ai.firebase.data
 
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
+import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.model.AiError
 import com.aj.geminiproj.core.model.AiResult
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
+import com.google.firebase.ai.type.QuotaExceededException
 
-class AiRepositoryImpl(private val aiClient: FirebaseAiClient) : AiRepository {
+class AiRepositoryImpl(
+    private val aiClient: FirebaseAiClient,
+    private val geminiOrchestrator: GeminiOrchestrator
+) : AiRepository {
     override suspend fun sendMessage(
         message: String,
         conversationHistory: List<ChatMessage>,
@@ -72,5 +78,12 @@ class AiRepositoryImpl(private val aiClient: FirebaseAiClient) : AiRepository {
         } catch (e: Exception) {
             AiResult.Success("New Chat") // Fallback title on error
         }
+    }
+
+    override suspend fun sendMessageWithTools(
+        message: String,
+        conversationHistory: List<ChatMessage>
+    ): Flow<ChatStreamEvent> {
+        return geminiOrchestrator.sendChatMessageWithTools(message, conversationHistory)
     }
 }

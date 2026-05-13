@@ -1,7 +1,9 @@
 package com.aj.geminiproj.core.data.contacts
 
 import android.content.Context
+import android.net.Uri
 import android.provider.ContactsContract
+import android.util.Log
 import com.aj.geminiproj.core.model.contacts.ContactInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,21 +28,29 @@ class ContactRepositoryImpl(private val context: Context) : ContactRepository {
         }
 
     private fun resolveAllContactIds(name: String): List<String> {
-        val uri = ContactsContract.Contacts.CONTENT_URI
-        val projection = arrayOf(ContactsContract.Contacts._ID)
-        val selection = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?"
-        val selectionArgs = arrayOf("%$name%")
+        val filterUri: Uri =
+            Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_FILTER_URI, Uri.encode(name))
+        val projection =
+            arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+//        val uri = ContactsContract.Contacts.CONTENT_URI
+//        val projection = arrayOf(ContactsContract.Contacts._ID)
+//        val selection = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?"
+//        val selectionArgs = arrayOf("%$name%")
         val sortOrder = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC"
 
         val ids = mutableListOf<String>()
         context.contentResolver.query(
-            uri,
+            filterUri,
             projection,
-            selection,
-            selectionArgs,
+            null,
+            null,
             sortOrder,
         )?.use { cursor ->
+            Log.e("Contacts found", "Cursor count: ${cursor.count}")
+            val nameIndex =
+                cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
             while (cursor.moveToNext()) {
+                Log.e("name ", cursor.getString(nameIndex))
                 ids.add(
                     cursor.getString(
                         cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
@@ -49,28 +59,6 @@ class ContactRepositoryImpl(private val context: Context) : ContactRepository {
             }
         }
         return ids
-    }
-
-    private fun resolveContactId(name: String): String? {
-        val uri = ContactsContract.Contacts.CONTENT_URI
-        val projection = arrayOf(ContactsContract.Contacts._ID)
-        val selection = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?"
-        val selectionArgs = arrayOf("%$name%")
-        val sortOrder = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC"
-
-        return context.contentResolver.query(
-            uri,
-            projection,
-            selection,
-            selectionArgs,
-            sortOrder,
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                cursor.getString(
-                    cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-                )
-            } else null
-        }
     }
 
     /**

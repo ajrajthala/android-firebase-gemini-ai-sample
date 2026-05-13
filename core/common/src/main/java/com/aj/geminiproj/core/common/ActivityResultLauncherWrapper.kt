@@ -1,5 +1,5 @@
 package com.aj.geminiproj.core.common
 
-interface ActivityResultLauncherWrapper {
+fun interface ActivityResultLauncherWrapper {
     fun launch(permission: String)
 }

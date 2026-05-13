@@ -6,5 +6,5 @@ import org.koin.dsl.module
 
 val commonModule = module {
     single { AndroidPermissionManager() }
-    single<PermissionManager> { get() }
+    single<PermissionManager> { get<AndroidPermissionManager>() }
 }

@@ -3,8 +3,10 @@ package com.aj.geminiproj.core.ai.firebase.orchestration
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.registry.ToolRegistry
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent.*
+import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.tool.ToolResult
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
@@ -15,6 +17,8 @@ import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import android.util.Log
+import com.google.firebase.ai.type.QuotaExceededException
 
 /**
 Orchestrates multi-turn conversations with Gemini including tool execution.
@@ -63,7 +67,19 @@ class GeminiOrchestrator(
 
         val firebaseTool = mapper.toFirebaseTool(registry.tools)
         val model =
-            Firebase.ai().generativeModel(modelName = modelName, tools = listOf(firebaseTool))
+            Firebase.ai().generativeModel(
+                modelName = modelName,
+                tools = listOf(firebaseTool),
+                systemInstruction = content {
+                    text(
+                        "You are a helpful Android assistant with access to specific tools. " +
+                                "Only use the tools provided in your toolset. " +
+                                "Do not attempt to use tools that are not explicitly defined. " +
+                                "When calling a tool, ensure all required parameters are provided. " +
+                                "If you need more information from the user to call a tool correctly, ask for it instead of calling the tool with missing data."
+                    )
+                }
+            )
 
         //
         val turnHistory = history.toMutableList()
@@ -116,7 +132,7 @@ class GeminiOrchestrator(
 
                 if (functionCallsThisRound.isEmpty()) {
                     // No tools called, turn is complete
-                    val modelContent = content(role = "assistant") {
+                    val modelContent = content(role = "model") {
                         modelTextParts.forEach { text(it.text) }
                     }
                     turnHistory.add(modelContent)
@@ -125,7 +141,7 @@ class GeminiOrchestrator(
                     break
                 }
 
-                val modelToolCallContent = content(role = "assistant") {
+                val modelToolCallContent = content(role = "model") {
                     modelFunctionCallParts.forEach { part(it) }
                 }
                 turnHistory.add(modelToolCallContent)
@@ -133,36 +149,56 @@ class GeminiOrchestrator(
                 // Execute all tools called this round
                 val functionResponseParts = mutableListOf<FunctionResponsePart>()
                 functionCallsThisRound.forEach { (functionName, args) ->
+                    Log.d("GeminiOrchestrator", "Executing tool '$functionName' with args: $args")
                     val result = dispatcher.dispatch(functionName, args)
 
                     when (result) {
-                        is ToolResult.Success -> emit(
-                            ToolCompleted(
-                                functionName = functionName,
-                                summary = buildSummary(functionName, result.data)
-                                    ?: "Tool executed successfully"
+                        is ToolResult.Success -> {
+                            Log.d(
+                                "GeminiOrchestrator",
+                                "Tool '$functionName' executed successfully with data: ${result.data}"
                             )
-                        )
-
-                        is ToolResult.Error -> emit(
-                            ChatStreamEvent.ToolFailed(
-                                functionName = functionName,
-                                errorMessage = result.message,
-                                isPermissionError = false
-
+                            emit(
+                                ToolCompleted(
+                                    functionName = functionName,
+                                    summary = buildSummary(functionName, result.data)
+                                        ?: "Tool executed successfully"
+                                )
                             )
-                        )
+                        }
 
-                        is ToolResult.PermissionDenied -> emit(
-                            ChatStreamEvent.ToolFailed
-                                (
-                                functionName = functionName,
-                                errorMessage = "Permission denied for tool: $functionName",
-                                isPermissionError = true
+                        is ToolResult.Error -> {
+                            Log.e(
+                                "GeminiOrchestrator",
+                                "Tool '$functionName' failed with error: ${result.message}"
                             )
-                        )
+                            emit(
+                                ChatStreamEvent.ToolFailed(
+                                    functionName = functionName,
+                                    errorMessage = result.message,
+                                    isPermissionError = false
+
+                                )
+                            )
+                        }
+
+                        is ToolResult.PermissionDenied -> {
+                            Log.w("GeminiOrchestrator", "Tool '$functionName' permission denied")
+                            emit(
+                                ChatStreamEvent.ToolFailed
+                                    (
+                                    functionName = functionName,
+                                    errorMessage = "Permission denied for tool: $functionName",
+                                    isPermissionError = true
+                                )
+                            )
+                        }
 
                         is ToolResult.NeedsConfirmation -> {
+                            Log.i(
+                                "GeminiOrchestrator",
+                                "Tool '$functionName' needs confirmation: ${result.message}"
+                            )
                             // Treat as completed, Gemini should handle the clarification naturally via the FunctionResponsePart we feed back below.
                             emit(
                                 ChatStreamEvent.ToolCompleted(
@@ -195,10 +231,11 @@ class GeminiOrchestrator(
 
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             emit(
                 ChatStreamEvent.StreamError(
                     e,
-                    errorMessage = "Something went wrong. Please try again."
+                    errorMessage = if (e is QuotaExceededException) "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan." else "Something went wrong. Try again..."
                 )
             )
         }
@@ -216,5 +253,33 @@ class GeminiOrchestrator(
             data.containsKey("events") -> "Found ${(data["events"] as? List<*>)?.size ?: 0} upcoming events"
             else -> null
         }
+    }
+
+    private fun List<ChatMessage>.toFirebaseChatHistory(): List<Content> {
+        return this.mapNotNull { message ->
+            when (message.role) {
+                MessageRole.USER -> content(role = "user") {
+                    text(message.content)
+                }
+
+                MessageRole.ASSISTANT -> content(role = "model") {
+                    text(message.content)
+                }
+
+                MessageRole.SYSTEM -> null // Firebase doesn't support system role
+            }
+        }
+    }
+
+    fun sendChatMessageWithTools(
+        message: String,
+        conversationHistory: List<ChatMessage>
+    ): Flow<ChatStreamEvent> {
+        val firebaseChatHistory = conversationHistory.toFirebaseChatHistory()
+        return chat(
+            userPrompt = message,
+            history = firebaseChatHistory,
+            onHistoryUpdated = { },
+        )
     }
 }

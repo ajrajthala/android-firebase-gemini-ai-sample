@@ -39,7 +39,7 @@ class FirebaseAiClient(val modelName: String = "gemini-3-flash-preview") {
                     text(message.content)
                 }
 
-                MessageRole.ASSISTANT -> content(role = "assistant") {
+                MessageRole.ASSISTANT -> content(role = "model") {
                     text(message.content)
                 }
 

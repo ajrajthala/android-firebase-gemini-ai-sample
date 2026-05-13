@@ -8,6 +8,7 @@ import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.features.chat.domain.usecase.DeleteConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.GenerateConversationTitleUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.GetConversationUseCase
@@ -15,6 +16,7 @@ import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithToolsUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +36,7 @@ class ChatViewModel(
     private val getConversationUseCase: GetConversationUseCase,
     private val clearConversationUseCase: DeleteConversationUseCase,
     private val generateConversationTitleUseCase: GenerateConversationTitleUseCase,
+    private val sendMessageWithToolsUseCase: SendMessageWithToolsUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ChatUiState(conversationId = conversationId))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
@@ -56,7 +59,7 @@ class ChatViewModel(
             }
 
             ChatUiEvent.OnSendMessage -> {
-                sendMessage()
+                sendMessageWithTools(true)
             }
 
             ChatUiEvent.OnRetry -> {
@@ -152,6 +155,151 @@ class ChatViewModel(
         }
     }
 
+    private fun sendMessageWithTools(addMessage: Boolean = true) {
+        val messageText = _inputText.value.trim()
+        if (messageText.isBlank()) return
+
+        // Resolve a real UUID if this is a new conversation
+        val currentConversationId = _uiState.value.conversationId.let { id ->
+            if (id == "new" || id.isBlank()) {
+                val newId = UUID.randomUUID().toString()
+                _uiState.update { it.copy(conversationId = newId) }
+                viewModelScope.launch {
+                    _uiEffect.send(ChatUiEffect.ConversationStarted(newId))
+                }
+                newId
+            } else {
+                id
+            }
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isStreaming = false, isLoading = true) }
+            _uiEffect.send(ChatUiEffect.ClearInput)
+
+            val userMessage = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                content = messageText,
+                role = MessageRole.USER,
+                status = MessageStatus.SENT,
+                timeStamp = System.currentTimeMillis()
+            )
+
+            _inputText.update { "" }
+
+            _uiState.update { state ->
+                state.copy(messages = state.messages + userMessage)
+            }
+            _uiEffect.send(ChatUiEffect.ScrollToBottom)
+
+            // save conversation after adding user message; for retries we do not add a new message,
+            if (addMessage) {
+                saveConversationAfterMessage(currentConversationId, userMessage)
+            }
+            // Send message to AI
+            sendMessageWithToolsUseCase(messageText, currentConversationId, _uiState.value.messages)
+                .collect { streamState ->
+                    handleChatStreamEvent(streamState, currentConversationId)
+                }
+        }
+    }
+
+    private suspend fun handleChatStreamEvent(
+        event: ChatStreamEvent,
+        currentConversationId: String
+    ) {
+        when (event) {
+            is ChatStreamEvent.TextChunk -> {
+                // Accumulate streaming text
+                _uiState.update {
+                    it.copy(
+                        streamingText = it.streamingText + event.text,
+                        isStreaming = true,
+                        isLoading = false,
+                        activeToolDisplay = null
+                    )
+                }
+            }
+
+            is ChatStreamEvent.ToolExecuting -> {
+                // Show tool execution indicator
+                _uiState.update {
+                    it.copy(
+                        activeToolDisplay = event.displayName,
+                        currentTurnToolSteps = it.currentTurnToolSteps + event.displayName,
+                        isStreaming = true,
+                        isLoading = false
+                    )
+                }
+            }
+
+            is ChatStreamEvent.ToolCompleted -> {
+                // Hide tool execution indicator
+                _uiState.update {
+                    it.copy(activeToolDisplay = event.summary ?: _uiState.value.activeToolDisplay)
+                }
+            }
+
+            is ChatStreamEvent.ToolFailed -> {
+                // Handle tool failure
+                _uiState.update {
+                    it.copy(
+                        activeToolDisplay = null,
+                        error = event.errorMessage,
+                        showPermissionRationale = event.isPermissionError
+                    )
+                }
+                viewModelScope.launch {
+                    _uiEffect.send(ChatUiEffect.ShowError(event.errorMessage))
+                }
+            }
+
+            is ChatStreamEvent.TurnCompleted -> {
+                // Conversation turn is complete - save the AI response
+                val aiMessage = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    content = _uiState.value.streamingText,
+                    role = MessageRole.ASSISTANT,
+                    status = MessageStatus.SENT,
+                    timeStamp = System.currentTimeMillis(),
+                    toolSteps = _uiState.value.currentTurnToolSteps
+                )
+
+                _uiState.update {
+                    it.copy(
+                        messages = it.messages + aiMessage,
+                        isStreaming = false,
+                        isLoading = false,
+                        streamingText = "",
+                        activeToolDisplay = null,
+                        currentTurnToolSteps = emptyList(),
+                        showPermissionRationale = false
+                    )
+                }
+
+                saveConversationAfterMessage(currentConversationId, aiMessage)
+                viewModelScope.launch {
+                    _uiEffect.send(ChatUiEffect.ScrollToBottom)
+                }
+            }
+
+            is ChatStreamEvent.StreamError -> {
+                // Handle streaming error
+                _uiState.update {
+                    it.copy(
+                        isStreaming = false,
+                        isLoading = false,
+                        streamingText = "",
+                        error = event.errorMessage,
+                        activeToolDisplay = null,
+                        currentTurnToolSteps = emptyList()
+                    )
+                }
+                viewModelScope.launch {
+                    _uiEffect.send(ChatUiEffect.ShowError(event.errorMessage))
+                }
+            }
+        }
+    }
 
     private suspend fun handleStreamState(
         streamState: StreamState<String>,
@@ -270,7 +418,8 @@ class ChatViewModel(
         val lastUserMessage = uiState.value.messages.lastOrNull { it.role == MessageRole.USER }
         lastUserMessage?.let { message ->
             _uiState.update { state -> state.copy(error = null) }
-            sendMessage(addMessage = false)
+//            sendMessage(addMessage = false)
+            sendMessageWithTools(false)
         }
     }
 
@@ -298,6 +447,10 @@ class ChatViewModel(
                 }
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 
 }

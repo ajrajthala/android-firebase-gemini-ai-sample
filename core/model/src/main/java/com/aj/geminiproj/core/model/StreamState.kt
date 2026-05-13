@@ -7,3 +7,4 @@ sealed class StreamState<out T> {
     data class Error(val message: String? = null) : StreamState<Nothing>()
     data class Streaming<T>(val partialData: T, val isComplete: Boolean) : StreamState<T>()
 }
+

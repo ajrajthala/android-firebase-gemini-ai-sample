@@ -1,6 +1,7 @@
 package com.aj.geminiproj.tools
 
 import android.Manifest
+import android.util.Log
 import com.aj.geminiproj.core.data.contacts.ContactRepository
 import com.aj.geminiproj.core.model.permission.PermissionManager
 import com.aj.geminiproj.core.model.permission.PermissionStatus
@@ -37,6 +38,11 @@ class FindContactTool(
     )
 
     override suspend fun execute(parameters: Map<String, Any>): ToolResult {
+        Log.d("FindContactTool", "Executing find_contact with parameters: $parameters")
+        parameters.forEach { (key, value) ->
+            Log.d("FindContactTool", "Param: key='$key', value='$value', type=${value.javaClass.simpleName}")
+        }
+
 //       Check for contacts permission
         val permissionStatus =
             permissionManager.requirePermission(Manifest.permission.READ_CONTACTS)
@@ -49,8 +55,9 @@ class FindContactTool(
                 )
         }
 
-        val name = parameters["name"] as? String
-            ?: return ToolResult.Error(message = "No name is provided to search for...")
+        // Extract name robustly
+        val name = (parameters["name"] ?: parameters["Name"] ?: parameters.entries.find { it.key.equals("name", ignoreCase = true) }?.value)?.toString()
+            ?: return ToolResult.Error(message = "No name is provided to search for...", isRetryable = false)
 
         val contacts = contactRepository.findContactsByName(name)
 
@@ -61,10 +68,7 @@ class FindContactTool(
                     put("found", false)
                     put("searched_name", name)
                     put(
-                        "message", "No contact found matching the name '$name'." +
-                                " You can continue without contact information." +
-                                "Do not attempt to send an invite." +
-                                "After completing all other steps, inform the user that no contact was found matching the name '$name' so no invite was sent or cannot make a call."
+                        "message", "No contact found matching the name '$name'."
                     )
                 })
 

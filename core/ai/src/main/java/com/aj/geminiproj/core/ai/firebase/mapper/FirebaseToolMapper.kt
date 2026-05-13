@@ -9,6 +9,8 @@ import com.google.firebase.ai.type.FunctionDeclaration
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.Schema
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
@@ -72,8 +74,28 @@ class FirebaseToolMapper {
 
         return FunctionResponsePart(
             name = functionName ?: "",
-            response = Json.encodeToJsonElement(responseData).jsonObject
+            response = buildJsonObject(responseData)
         )
     }
 
+    private fun buildJsonObject(data: Map<String, Any>): JsonObject {
+        val jsonMap = mutableMapOf<String, JsonElement>()
+        for ((key, value) in data) {
+            jsonMap[key] = toJsonElement(value)
+        }
+        return JsonObject(jsonMap)
+    }
+
+    private fun toJsonElement(value: Any?): JsonElement {
+        return when (value) {
+            is String -> Json.encodeToJsonElement(value)
+            is Number -> Json.encodeToJsonElement(value)
+            is Boolean -> Json.encodeToJsonElement(value)
+            is List<*> -> JsonArray(value.map { toJsonElement(it) }) // assuming list contains serializable items
+            is Map<*, *> -> buildJsonObject(value as Map<String, Any>)
+            else -> {
+                Json.encodeToJsonElement(value.toString())
+            }
+        }
+    }
 }

@@ -9,6 +9,7 @@ import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithToolsUseCase
 import com.aj.geminiproj.features.chat.presentation.ChatViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -25,6 +26,7 @@ val chatModule = module {
     factory { SaveConversationUseCase(get()) }
     factory { GenerateConversationTitleUseCase(get()) }
     factory { SaveMessageUseCase(get()) }
+    factory{ SendMessageWithToolsUseCase(get()) }
 
     viewModel { params ->
         ChatViewModel(
@@ -36,6 +38,9 @@ val chatModule = module {
             saveConversationUseCase = get(),
             saveMessageUseCase = get(),
             generateConversationTitleUseCase = get(),
+            sendMessageWithToolsUseCase = get(),
         )
     }
+
+    
 }

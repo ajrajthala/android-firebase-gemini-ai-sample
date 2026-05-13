@@ -49,7 +49,7 @@ class AndroidPermissionManager : PermissionManager {
         this.appContext = context
     }
 
-    fun onPermissionResult(permission: String, isGranted: Boolean) {
+    fun onPermissionResult(isGranted: Boolean) {
         val permission = pendingPermission ?: return
         val continuation = pendingContinuation ?: return
         continuation(

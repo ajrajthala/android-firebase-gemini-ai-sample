@@ -11,7 +11,7 @@ import org.koin.dsl.module
 
 val aiModule = module {
     single { FirebaseAiClient() }
-    single<AiRepository> { AiRepositoryImpl(get()) }
+    single<AiRepository> { AiRepositoryImpl(get(), get()) }
 
     single { FirebaseToolMapper() }
     single { ToolRegistry() }
