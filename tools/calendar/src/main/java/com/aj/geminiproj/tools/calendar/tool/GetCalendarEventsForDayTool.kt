@@ -66,7 +66,7 @@ class GetCalendarEventsForDayTool(
     }
 }
 
-private fun Map<String, Any>.longParam(key: String): Long? {
+fun Map<String, Any>.longParam(key: String): Long? {
     val raw =
         this[key] ?: this.entries.firstOrNull() { it.key.equals(key, ignoreCase = true) }?.value
     return when (raw) {
