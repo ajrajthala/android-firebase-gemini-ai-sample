@@ -9,6 +9,7 @@ import com.aj.geminiproj.core.model.tool.ToolDefinition
 import com.aj.geminiproj.core.model.tool.ToolParameter
 import com.aj.geminiproj.core.model.tool.ToolResult
 import com.aj.geminiproj.tools.calendar.domain.repository.CalendarRepository
+import com.aj.geminiproj.tools.calendar.util.longParam
 
 class IsTimeSlotAvailableTool(
     private val calendarRepository: CalendarRepository,

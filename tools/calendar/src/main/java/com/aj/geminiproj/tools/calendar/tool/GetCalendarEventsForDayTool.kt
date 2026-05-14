@@ -9,6 +9,7 @@ import com.aj.geminiproj.core.model.tool.ToolDefinition
 import com.aj.geminiproj.core.model.tool.ToolParameter
 import com.aj.geminiproj.core.model.tool.ToolResult
 import com.aj.geminiproj.tools.calendar.domain.repository.CalendarRepository
+import com.aj.geminiproj.tools.calendar.util.longParam
 
 class GetCalendarEventsForDayTool(
     private val calendarRepository: CalendarRepository,
@@ -63,15 +64,5 @@ class GetCalendarEventsForDayTool(
                 "events" to eventMaps,
             )
         )
-    }
-}
-
-fun Map<String, Any>.longParam(key: String): Long? {
-    val raw =
-        this[key] ?: this.entries.firstOrNull() { it.key.equals(key, ignoreCase = true) }?.value
-    return when (raw) {
-        is Number -> raw.toLong()
-        is String -> raw.toLongOrNull()
-        else -> null
     }
 }
