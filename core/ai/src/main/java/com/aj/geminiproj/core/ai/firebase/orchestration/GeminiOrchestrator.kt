@@ -1,11 +1,12 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
+import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.registry.ToolRegistry
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
-import com.aj.geminiproj.core.model.chat.ChatStreamEvent.*
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent.ToolCompleted
 import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.tool.ToolResult
 import com.google.firebase.Firebase
@@ -13,12 +14,13 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
+import com.google.firebase.ai.type.QuotaExceededException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import android.util.Log
-import com.google.firebase.ai.type.QuotaExceededException
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
 Orchestrates multi-turn conversations with Gemini including tool execution.
@@ -77,6 +79,9 @@ class GeminiOrchestrator(
         history: List<Content> = emptyList(),
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
+
+        logUserMessage(userPrompt)
+
         val firebaseTool = mapper.toFirebaseTool(registry.tools)
         val model =
             Firebase.ai().generativeModel(
@@ -107,6 +112,7 @@ class GeminiOrchestrator(
                             when (part) {
                                 is TextPart -> {
                                     modelTextParts.add(part)
+                                    logAiResponseChunk(part.text)
                                     emit(ChatStreamEvent.TextChunk(part.text))
                                 }
 
@@ -115,6 +121,7 @@ class GeminiOrchestrator(
 
                                     // Notify UI that a tool is starting
                                     val tool = registry.getToolByName(part.name)
+                                    logToolCall(part.name, part.args)
                                     emit(
                                         ChatStreamEvent.ToolExecuting(
                                             functionName = part.name,
@@ -133,6 +140,11 @@ class GeminiOrchestrator(
                             }
                         }
                     }
+
+                val fullText = modelTextParts.joinToString(",") { it.text }
+                if (fullText.isNotBlank()) {
+                    logAiResponseCompleted(fullText)
+                }
 
                 if (functionCallsThisRound.isEmpty()) {
                     // No tools called, turn is complete
@@ -153,15 +165,10 @@ class GeminiOrchestrator(
                 // Execute all tools called this round
                 val functionResponseParts = mutableListOf<FunctionResponsePart>()
                 functionCallsThisRound.forEach { (functionName, args) ->
-                    Log.d("GeminiOrchestrator", "Executing tool '$functionName' with args: $args")
                     val result = dispatcher.dispatch(functionName, args)
-
+                    logToolResult(functionName, result)
                     when (result) {
                         is ToolResult.Success -> {
-                            Log.d(
-                                "GeminiOrchestrator",
-                                "Tool '$functionName' executed successfully with data: ${result.data}"
-                            )
                             emit(
                                 ToolCompleted(
                                     functionName = functionName,
@@ -172,10 +179,6 @@ class GeminiOrchestrator(
                         }
 
                         is ToolResult.Error -> {
-                            Log.e(
-                                "GeminiOrchestrator",
-                                "Tool '$functionName' failed with error: ${result.message}"
-                            )
                             emit(
                                 ChatStreamEvent.ToolFailed(
                                     functionName = functionName,
@@ -187,7 +190,6 @@ class GeminiOrchestrator(
                         }
 
                         is ToolResult.PermissionDenied -> {
-                            Log.w("GeminiOrchestrator", "Tool '$functionName' permission denied")
                             emit(
                                 ChatStreamEvent.ToolFailed
                                     (
@@ -199,10 +201,6 @@ class GeminiOrchestrator(
                         }
 
                         is ToolResult.NeedsConfirmation -> {
-                            Log.i(
-                                "GeminiOrchestrator",
-                                "Tool '$functionName' needs confirmation: ${result.message}"
-                            )
                             // Treat as completed, Gemini should handle the clarification naturally via the FunctionResponsePart we feed back below.
                             emit(
                                 ChatStreamEvent.ToolCompleted(
@@ -225,6 +223,7 @@ class GeminiOrchestrator(
 
                 // Safety check to prevent infinite loops
                 if (toolRounds >= maxToolRounds) {
+                    Log.e(TAG, "Max tool rounds ($maxToolRounds) reached - aborting turn.")
                     emit(
                         ChatStreamEvent.StreamError(
                             throwable = Exception("Max tool execution rounds reached"),
@@ -235,11 +234,18 @@ class GeminiOrchestrator(
 
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Stream error: ${e.message}", e)
             e.printStackTrace()
+            val message =
+                if (e is QuotaExceededException) {
+                    "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
+                } else {
+                    "Something went wrong. Try again..."
+                }
             emit(
                 ChatStreamEvent.StreamError(
                     e,
-                    errorMessage = if (e is QuotaExceededException) "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan." else "Something went wrong. Try again..."
+                    errorMessage = message
                 )
             )
         }
@@ -287,5 +293,60 @@ class GeminiOrchestrator(
             history = firebaseChatHistory,
             onHistoryUpdated = { },
         )
+    }
+
+
+    private fun logUserMessage(message: String) {
+        Log.i(TAG, "----- USER MESSAGE --------------------")
+        Log.i(TAG, message)
+        Log.i(TAG, "---------------------------------------")
+    }
+
+    private fun logAiResponseChunk(chunk: String) {
+        Log.d(TAG, "| AI > $chunk")
+    }
+
+    private fun logAiResponseCompleted(fullText: String) {
+        Log.i(TAG, "---- AI RESPONSE ------------------------")
+        Log.i(TAG, fullText)
+        Log.i(TAG, "-----------------------------------------")
+    }
+
+    private fun logToolCall(functionName: String, args: Map<String, Any>) {
+        Log.i(TAG, "---- TOOL CALL ------------------------")
+        Log.i(TAG, functionName + "\n" + args.forEach { (k, v) -> Log.i(TAG, "Arg : $k = $v") })
+        Log.i(TAG, "-----------------------------------------")
+    }
+
+    private fun logToolResult(functionName: String, result: ToolResult) {
+        Log.i(TAG, "---- TOOL RESULT ------------------------")
+        Log.i(TAG, functionName)
+        when (result) {
+            is ToolResult.Error -> {
+                Log.w(TAG, "Status: ERROR")
+                Log.w(TAG, "Message: ${result.message}")
+                Log.w(TAG, "Retryable: ${result.isRetryable}")
+            }
+
+            is ToolResult.NeedsConfirmation -> {
+                Log.i(TAG, "Status: NEED CONFIRMATION")
+                Log.i(TAG, "Message: ${result.message}")
+                result.options.forEachIndexed { index, option ->
+                    Log.i(TAG, "Option[$index]: $option")
+                }
+            }
+
+            is ToolResult.PermissionDenied -> {
+                Log.w(TAG, "Status: PERMISSION DENIED")
+                Log.w(TAG, "Message: ${result.message}")
+                Log.w(TAG, "Retryable: ${result.permission}")
+            }
+
+            is ToolResult.Success -> {
+                Log.w(TAG, "Status: SUCCESS")
+                result.data.forEach { (k, v) -> Log.i(TAG, "Arg : $k = $v") }
+            }
+        }
+        Log.i(TAG, "-----------------------------------------")
     }
 }
