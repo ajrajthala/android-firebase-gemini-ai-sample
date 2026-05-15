@@ -41,8 +41,10 @@ object PromptAssembler {
         val pack = buildPack(scope, includeExamples)
         return buildString {
             appendLine(pack.systemPrompt)
-            appendLine()
-            appendLine(pack.examples)
+            if (!pack.examples.isNullOrBlank()) {
+                appendLine()
+                appendLine(pack.examples)
+            }
         }
     }
 

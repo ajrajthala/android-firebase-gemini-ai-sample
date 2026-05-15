@@ -7,7 +7,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 
 class FirebaseRouterAiClient(
-    private val modelName: String = "gemini-3-flash-preview"
+    private val modelName: String = "gemini-2.5-flash"
 ) : RouterLlmClient {
 
     override suspend fun classify(

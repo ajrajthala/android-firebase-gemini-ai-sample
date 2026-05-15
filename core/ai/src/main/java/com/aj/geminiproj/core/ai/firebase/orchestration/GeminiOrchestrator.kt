@@ -48,7 +48,7 @@ class GeminiOrchestrator(
     private val dispatcher: ToolDispatcher,
     private val mapper: FirebaseToolMapper,
     private val maxToolRounds: Int = 10,
-    private val modelName: String = "gemini-3-flash-preview"
+    private val modelName: String = "gemini-2.5-flash"
 ) {
 
     companion object {
