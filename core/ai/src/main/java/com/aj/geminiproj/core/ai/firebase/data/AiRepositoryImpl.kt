@@ -82,8 +82,9 @@ class AiRepositoryImpl(
 
     override suspend fun sendMessageWithTools(
         message: String,
+        systemPrompt: String,
         conversationHistory: List<ChatMessage>
     ): Flow<ChatStreamEvent> {
-        return geminiOrchestrator.sendChatMessageWithTools(message, conversationHistory)
+        return geminiOrchestrator.sendChatMessageWithTools(message, systemPrompt, conversationHistory)
     }
 }

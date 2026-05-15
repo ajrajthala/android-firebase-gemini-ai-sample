@@ -37,6 +37,7 @@ interface AiRepository {
      */
     suspend fun sendMessageWithTools(
         message: String,
+        systemPrompt: String,
         conversationHistory: List<ChatMessage> = emptyList()
     ): Flow<ChatStreamEvent>
 

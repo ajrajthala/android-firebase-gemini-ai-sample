@@ -39,6 +39,7 @@ val chatModule = module {
             saveMessageUseCase = get(),
             generateConversationTitleUseCase = get(),
             sendMessageWithToolsUseCase = get(),
+            promptRouter = get()
         )
     }
 

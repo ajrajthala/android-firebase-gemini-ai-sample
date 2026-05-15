@@ -57,6 +57,7 @@ interface ChatRepository {
      */
     suspend fun sendMessageWithTools(
         message: String,
+        systemPrompt: String,
         conversationId: String,
         conversationHistory: List<ChatMessage>
     ): Flow<ChatStreamEvent>

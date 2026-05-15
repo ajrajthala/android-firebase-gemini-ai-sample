@@ -1,6 +1,7 @@
 package com.aj.geminiproj.tools.calendar.tool
 
 import android.Manifest
+import android.util.Log
 import com.aj.geminiproj.core.model.permission.PermissionManager
 import com.aj.geminiproj.core.model.permission.PermissionStatus
 import com.aj.geminiproj.core.model.tool.ParameterType
@@ -14,25 +15,32 @@ import com.aj.geminiproj.tools.calendar.util.longParam
 class GetCalendarEventsForDayTool(
     private val calendarRepository: CalendarRepository,
     private val permissionManager: PermissionManager
-) : Tool{
+) : Tool {
+
+    companion object {
+        private const val TAG = "GetCalendarEventsTool"
+    }
+
     override val definition = ToolDefinition(
         functionName = "get_calendar_events_for_day",
         description = "Returns calendar events between startOfDayMs and endOfDayMs",
         parameters = listOf(
             ToolParameter(
                 "startOfDayMs",
-                ParameterType.NUMBER,
+                ParameterType.INTEGER,
                 "start of day in epoch millis",
                 true
             ),
-            ToolParameter("endOfDayMs", ParameterType.NUMBER, "end of day in epoch millis", true)
+            ToolParameter("endOfDayMs", ParameterType.INTEGER, "end of day in epoch millis", true)
         ),
         displayName = "Reading calendar events..."
     )
 
     override suspend fun execute(parameters: Map<String, Any>): ToolResult {
+        Log.d(TAG, "call args=$parameters")
         val permission = permissionManager.requirePermission(Manifest.permission.READ_CALENDAR)
         if (permission is PermissionStatus.Denied) {
+            Log.w(TAG, "result permission_denied")
             return ToolResult.PermissionDenied(
                 message = "Calendar read permission is required to fetch events.",
                 permission = Manifest.permission.READ_CALENDAR
@@ -40,9 +48,15 @@ class GetCalendarEventsForDayTool(
         }
 
         val start = parameters.longParam("startOfDayMs")
-            ?: return ToolResult.Error("Missing or invalid startOfDayMs")
+            ?: run {
+                Log.w(TAG, "result error=invalid_startOfDayMs args =$parameters")
+                return ToolResult.Error("Missing or invalid startOfDayMs")
+            }
         val end = parameters.longParam("endOfDayMs")
-            ?: return ToolResult.Error("Missing or invalid endOfDayMs")
+            ?: run {
+                Log.w(TAG, "result error=invalid_endOfDayMs args =$parameters")
+                return ToolResult.Error("Missing or invalid endOfDayMs")
+            }
         if (end > start) return ToolResult.Error("'endOfDayMs' must be greater than 'startOfDayMs'.")
         val events = calendarRepository.getEventsForDay(startOfDayMs = start, endOfDayMs = end)
 
@@ -58,6 +72,7 @@ class GetCalendarEventsForDayTool(
             }
         }
 
+        Log.d(TAG, "result success count=${events.size} start=$start end=$end")
         return ToolResult.Success(
             data = mapOf(
                 "count" to events.size,

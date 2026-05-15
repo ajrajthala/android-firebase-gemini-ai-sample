@@ -78,9 +78,10 @@ class ChatRepositoryImpl(
 
     override suspend fun sendMessageWithTools(
         message: String,
+        systemPrompt: String,
         conversationId: String,
         conversationHistory: List<ChatMessage>
     ): Flow<ChatStreamEvent> {
-        return aiRepository.sendMessageWithTools(message, conversationHistory)
+        return aiRepository.sendMessageWithTools(message, systemPrompt, conversationHistory)
     }
 }

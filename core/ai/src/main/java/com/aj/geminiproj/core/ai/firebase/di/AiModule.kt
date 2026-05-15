@@ -1,11 +1,15 @@
 package com.aj.geminiproj.core.ai.firebase.di
 
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
+import com.aj.geminiproj.core.ai.firebase.FirebaseRouterAiClient
 import com.aj.geminiproj.core.ai.firebase.data.AiRepositoryImpl
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
+import com.aj.geminiproj.core.ai.firebase.prompt.PromptRouter
+import com.aj.geminiproj.core.ai.firebase.prompt.RouterDecisionParser
+import com.aj.geminiproj.core.ai.firebase.prompt.RouterLlmClient
 import com.aj.geminiproj.core.ai.firebase.registry.ToolRegistry
 import org.koin.dsl.module
 
@@ -16,6 +20,10 @@ val aiModule = module {
     single { FirebaseToolMapper() }
     single { ToolRegistry() }
     single { ToolDispatcher(registry = get()) }
+
+    single<RouterLlmClient> { FirebaseRouterAiClient() }
+    single { RouterDecisionParser() }
+    single { PromptRouter(llmClient = get(), parser = get()) }
 
     single {
         GeminiOrchestrator(

@@ -3,6 +3,8 @@ package com.aj.geminiproj.features.chat.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aj.geminiproj.core.ai.firebase.prompt.PromptRouter
+import com.aj.geminiproj.core.ai.firebase.prompt.ToolCallDecision
 import com.aj.geminiproj.core.model.chat.ChatConversation
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.MessageRole
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,6 +40,7 @@ class ChatViewModel(
     private val clearConversationUseCase: DeleteConversationUseCase,
     private val generateConversationTitleUseCase: GenerateConversationTitleUseCase,
     private val sendMessageWithToolsUseCase: SendMessageWithToolsUseCase,
+    private val promptRouter: PromptRouter
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ChatUiState(conversationId = conversationId))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
@@ -196,10 +200,58 @@ class ChatViewModel(
                 saveConversationAfterMessage(currentConversationId, userMessage)
             }
             // Send message to AI
-            sendMessageWithToolsUseCase(messageText, currentConversationId, _uiState.value.messages)
-                .collect { streamState ->
-                    handleChatStreamEvent(streamState, currentConversationId)
+            runCatching {
+                promptRouter.route(messageText)
+            }.onFailure { throwable ->
+                val errorMsg = throwable.message ?: "Failed to route request"
+                _uiState.update {
+                    it.copy(
+                        isStreaming = false,
+                        isLoading = false,
+                        activeToolDisplay = null,
+                        error = errorMsg
+                    )
                 }
+                _uiEffect.send(ChatUiEffect.ShowError(errorMsg))
+            }.onSuccess { decision ->
+                when (decision) {
+                    is ToolCallDecision.AnswerDirectly -> {
+                        val decision: ToolCallDecision = promptRouter.route(messageText)
+                        sendMessageStreamUseCase(
+                            messageText,
+                            currentConversationId,
+                            _uiState.value.messages
+                        )
+                            .collect { streamState ->
+                                handleStreamState(streamState, currentConversationId)
+                            }
+                    }
+
+                    is ToolCallDecision.AskClarification -> {
+                        val aiMessage = ChatMessage(
+                            id = UUID.randomUUID().toString(),
+                            content = decision.question,
+                            role = MessageRole.ASSISTANT,
+                            status = MessageStatus.SENT,
+                            timeStamp = System.currentTimeMillis(),
+                        )
+
+                        saveConversationAfterMessage(currentConversationId, aiMessage)
+                        _uiEffect.send(ChatUiEffect.ScrollToBottom)
+                    }
+
+                    is ToolCallDecision.UseScopedTools -> {
+                        sendMessageWithToolsUseCase(
+                            message = messageText,
+                            systemPrompt = decision.systemPrompt,
+                            conversationId = currentConversationId,
+                            conversationHistory = _uiState.value.messages,
+                        ).collect { streamState ->
+                            handleChatStreamEvent(streamState, currentConversationId)
+                        }
+                    }
+                }
+            }
         }
     }
 

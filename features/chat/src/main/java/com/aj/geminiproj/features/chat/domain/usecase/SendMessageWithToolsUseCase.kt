@@ -9,9 +9,15 @@ class SendMessageWithToolsUseCase(private val chatRepository: ChatRepository) {
 
     suspend operator fun invoke(
         message: String,
+        systemPrompt: String,
         conversationId: String,
         conversationHistory: List<ChatMessage>,
     ): Flow<ChatStreamEvent> {
-        return chatRepository.sendMessageWithTools(message, conversationId, conversationHistory)
+        return chatRepository.sendMessageWithTools(
+            message,
+            systemPrompt,
+            conversationId,
+            conversationHistory
+        )
     }
 }

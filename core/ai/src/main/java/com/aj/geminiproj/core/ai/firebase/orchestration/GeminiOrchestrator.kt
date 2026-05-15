@@ -49,6 +49,18 @@ class GeminiOrchestrator(
     private val modelName: String = "gemini-3-flash-preview"
 ) {
 
+    companion object {
+        private const val TAG = "GeminiOrchestrator"
+
+        val defaultSystemPrompt: String = """
+            You are a helpful Android assistant with access to specific tools.
+            Use only the tools explicitly provided to you.
+            When calling a tool, ensure all required parameters are present.
+            If information needed to call a tool is missing, ask user instead of guessing.
+            Never fabricate tool results.
+        """.trimIndent()
+    }
+
     fun chat(
         /**
          * Initiates a multi-turn chat conversation with Gemini, handling tool execution and streaming responses.
@@ -61,24 +73,16 @@ class GeminiOrchestrator(
          * [TextChunk, ToolExecuting, ToolCompleted/ToolFailed(zero or more rounds), TextChunk, ...,TurnComplete/ChatCompleted/StreamError]
          */
         userPrompt: String,
+        systemPrompt: String = defaultSystemPrompt,
         history: List<Content> = emptyList(),
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
-
         val firebaseTool = mapper.toFirebaseTool(registry.tools)
         val model =
             Firebase.ai().generativeModel(
                 modelName = modelName,
                 tools = listOf(firebaseTool),
-                systemInstruction = content {
-                    text(
-                        "You are a helpful Android assistant with access to specific tools. " +
-                                "Only use the tools provided in your toolset. " +
-                                "Do not attempt to use tools that are not explicitly defined. " +
-                                "When calling a tool, ensure all required parameters are provided. " +
-                                "If you need more information from the user to call a tool correctly, ask for it instead of calling the tool with missing data."
-                    )
-                }
+                systemInstruction = content { text(systemPrompt) }
             )
 
         //
@@ -273,11 +277,13 @@ class GeminiOrchestrator(
 
     fun sendChatMessageWithTools(
         message: String,
+        systemPrompt: String,
         conversationHistory: List<ChatMessage>
     ): Flow<ChatStreamEvent> {
         val firebaseChatHistory = conversationHistory.toFirebaseChatHistory()
         return chat(
             userPrompt = message,
+            systemPrompt = systemPrompt,
             history = firebaseChatHistory,
             onHistoryUpdated = { },
         )
