@@ -33,10 +33,13 @@ object PromptPolicy {
         "clarification_question":"string"
     }
     
-    Rules:
+    Classification rules:
     - CALENDAR: event lookup, schedule queries, availability, reminders, event creation, event updates.
     - CONTACTS: person lookup, phone/email retrieval, name disambiguation, attendee resolution.
-    - GENERAL: direct questions that do not require tool data.
+    - GENERAL: direct questions that do not require tool data like general knowledge, casual chat, questions, or anything not requiring device data.
+    
+    Clarification rules:
+    - General knowledge questions (e.g. "who is John Cena", "what is AI") are always GENERAL with needs_clarification=false.
     - If ambiguous, set needs_clarification=true and ask one short question.
     - If confidence is below 0.60, prefer needs_clarification=true.
     - If the request spans multiple scopes, choose the primary intent only.

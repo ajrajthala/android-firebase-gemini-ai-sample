@@ -13,12 +13,15 @@ class RouterDecisionParser {
     fun parseOrFallback(raw: String): RouterDecision {
         val cleaned = sanitize(raw)
         val parsed = runCatching { json.decodeFromString<RouterDecision>(cleaned) }.getOrNull()
-            ?: return fallback("I can help with calendar or contacts. Which one do you need?")
+            ?: return fallbackGeneral()
         if (parsed.confidence !in 0.0..1.0) {
-            return fallback("Could you clarify if this is about calendar or contacts?")
+            return fallbackGeneral()
         }
         if (parsed.needsClarification && parsed.clarificationQuestion.isBlank()) {
-            return fallback("Could you clarify your request?")
+            return parsed.copy(
+                needsClarification = false,
+                clarificationQuestion = ""
+            )
         }
         return parsed
     }
@@ -34,11 +37,11 @@ class RouterDecisionParser {
         return trimmed
     }
 
-    private fun fallback(question: String): RouterDecision = RouterDecision(
+    private fun fallbackGeneral(): RouterDecision = RouterDecision(
         scope = PromptScope.GENERAL,
         confidence = 0.0,
-        needsClarification = true,
-        clarificationQuestion = question
+        needsClarification = false,
+        clarificationQuestion = ""
     )
 
 }

@@ -8,13 +8,37 @@ class PromptRouter(
     private val llmClient: RouterLlmClient,
     private val parser: RouterDecisionParser
 ) {
+
+    private fun looksLikeGeneralQuestion(input: String): Boolean {
+        val q = input.lowercase()
+        val toolKeywords = listOf(
+            "calendar", "event", "schedule", "meeting", "appointment",
+            "reminder", "tomorrow", "today", "next week", "free slot",
+            "contact", "phone", "email", "call", "invite", "attendee"
+        )
+        return toolKeywords.none { q.contains(it) }
+    }
+
     suspend fun route(userMessage: String): ToolCallDecision {
+        // Fast-path: obvious general question -> answer directly without a router llm call
+        if (looksLikeGeneralQuestion(userMessage)) {
+            return ToolCallDecision.AnswerDirectly(
+                systemPrompt = PromptAssembler.buildSystemPrompt(PromptScope.GENERAL)
+            )
+        }
+
         val raw = llmClient.classify(
-            systemPrompt = PromptRegistry.routerPrompt,
+            systemPrompt = PromptPolicy.routerPrompt,
             userMessage = userMessage
         )
 
         val decision: RouterDecision = parser.parseOrFallback(raw)
+
+        if (decision.scope == PromptScope.GENERAL) {
+            return ToolCallDecision.AnswerDirectly(
+                systemPrompt = PromptAssembler.buildSystemPrompt(PromptScope.GENERAL)
+            )
+        }
 
         if (decision.needsClarification) {
             return ToolCallDecision.AskClarification(
@@ -23,17 +47,10 @@ class PromptRouter(
             )
         }
 
-        return when (decision.scope) {
-            PromptScope.GENERAL -> ToolCallDecision.AnswerDirectly(
-                systemPrompt = PromptRegistry.generalSystemPrompt()
-            )
-
-            PromptScope.CONTACT, PromptScope.CALENDAR -> ToolCallDecision.UseScopedTools(
-                scope = decision.scope,
-                systemPrompt = PromptRegistry.scopedSystemPrompt(decision.scope),
-                includeExamples = true
-
-            )
-        }
+        return ToolCallDecision.UseScopedTools(
+            scope = decision.scope,
+            systemPrompt = PromptAssembler.buildSystemPrompt(decision.scope),
+            includeExamples = true
+        )
     }
 }
