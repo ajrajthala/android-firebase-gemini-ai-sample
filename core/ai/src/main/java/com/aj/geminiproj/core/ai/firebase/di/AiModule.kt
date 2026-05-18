@@ -3,6 +3,7 @@ package com.aj.geminiproj.core.ai.firebase.di
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
 import com.aj.geminiproj.core.ai.firebase.agent.AgentContextBuilder
 import com.aj.geminiproj.core.ai.firebase.agent.AgentTracer
+import com.aj.geminiproj.core.ai.firebase.agent.ConversationAgent
 import com.aj.geminiproj.core.ai.firebase.agent.ConversationStateManager
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainResolver
@@ -32,6 +33,16 @@ val aiModule = module {
             dispatcher = get(),
             mapper = get(),
             tracer = get(),
+        )
+    }
+
+    single {
+        ConversationAgent(
+            stateManager = get(),
+            domainResolver = get(),
+            domainRegistry = get(),
+            tracer = get(),
+            orchestrator = get(),
         )
     }
 }

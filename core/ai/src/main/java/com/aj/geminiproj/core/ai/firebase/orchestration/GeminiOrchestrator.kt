@@ -24,6 +24,7 @@ import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.util.UUID
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -87,6 +88,8 @@ class GeminiOrchestrator(
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
 
+        val turnId = UUID.randomUUID().toString()
+        tracer.beginTurn(turnId, userPrompt)
         tracer.logSystemPrompt(systemPrompt)
         tracer.logToolsLoaded(tools)
 
@@ -163,11 +166,9 @@ class GeminiOrchestrator(
                     }
 
                 val fullText = modelTextParts.joinToString(",") { it.text }
-                if (fullText.isNotBlank()) {
-                    tracer.logTurnCompletion(fullText)
-                }
 
                 if (functionCallsThisRound.isEmpty()) {
+                    tracer.logTurnCompletion(fullText)
                     // No tools called, turn is complete
                     val modelContent = content(role = "model") {
                         modelTextParts.forEach { text(it.text) }

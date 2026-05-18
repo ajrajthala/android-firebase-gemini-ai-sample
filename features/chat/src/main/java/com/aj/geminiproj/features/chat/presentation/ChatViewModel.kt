@@ -3,9 +3,6 @@ package com.aj.geminiproj.features.chat.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aj.geminiproj.core.ai.firebase.agent.ConversationStateManager
-import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
-import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainResolver
 import com.aj.geminiproj.core.model.StreamState
 import com.aj.geminiproj.core.model.chat.ChatConversation
 import com.aj.geminiproj.core.model.chat.ChatMessage
@@ -15,11 +12,11 @@ import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.features.chat.domain.usecase.DeleteConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.GenerateConversationTitleUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.GetConversationUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.ResetConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
-import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
-import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithToolsUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithAgentUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,17 +29,14 @@ import java.util.UUID
 
 class ChatViewModel(
     private val conversationId: String,
-    private val sendMessageUseCase: SendMessageUseCase,
     private val sendMessageStreamUseCase: SendMessageStreamUseCase,
     private val saveConversationUseCase: SaveConversationUseCase,
     private val saveMessageUseCase: SaveMessageUseCase,
     private val getConversationUseCase: GetConversationUseCase,
     private val clearConversationUseCase: DeleteConversationUseCase,
     private val generateConversationTitleUseCase: GenerateConversationTitleUseCase,
-    private val sendMessageWithToolsUseCase: SendMessageWithToolsUseCase,
-    private val stateManager: ConversationStateManager,
-    private val domainResolver: SemanticDomainResolver,
-    private val domainRegistry: SemanticDomainRegistry,
+    private val sendMessageWithAgentUseCase: SendMessageWithAgentUseCase,
+    private val resetConversationUseCase: ResetConversationUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ChatUiState(conversationId = conversationId))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
@@ -182,19 +176,10 @@ class ChatViewModel(
             _uiState.update { it.copy(isStreaming = false, isLoading = true) }
             _uiEffect.send(ChatUiEffect.ClearInput)
 
-            val userMessage = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                content = messageText,
-                role = MessageRole.USER,
-                status = MessageStatus.SENT,
-                timeStamp = System.currentTimeMillis()
-            )
+            val userMessage = buildUserMessage(messageText)
 
             _inputText.update { "" }
-
-            _uiState.update { state ->
-                state.copy(messages = state.messages + userMessage)
-            }
+            _uiState.update { state -> state.copy(messages = state.messages + userMessage) }
             _uiEffect.send(ChatUiEffect.ScrollToBottom)
 
             // save conversation after adding user message; for retries we do not add a new message,
@@ -202,42 +187,24 @@ class ChatViewModel(
                 saveConversationAfterMessage(currentConversationId, userMessage)
             }
             // Send message to AI
-
-            //------- Step 1: Resolve domains (Once per conversation or on topic shift)
-            val needsResolution = stateManager.isFirstTurn()
-                    || stateManager.detectTopicShift(messageText)
-            if (needsResolution) {
-                val resolvedDomains = domainResolver.resolve(messageText)
-                stateManager.setActiveDomains(resolvedDomains)
-            }
-            stateManager.markTurnProcessed()
-
-            //----Step 2: Build system prompt -------------
-            val systemPrompt = stateManager.buildSystemPrompt()
-
-            //----Step 3: Few-shot primers
-            val fewShotPrimer = stateManager.consumeFewShotPrimers()
-
-            //-----Step 4: active tools for this session only
-            val activeTools = domainRegistry.getToolsForDomains(stateManager.getActiveDomains())
-
-            //-----Step 5: Bounded history (Sliding window)
-            val fullHistory = _uiState.value.messages
-            val boundedHistory = stateManager.boundedHistory(fullHistory)
-
-            //-------Step 6: LLM call
-            sendMessageWithToolsUseCase(
-                message = messageText,
-                systemPrompt = systemPrompt,
-                conversationId = currentConversationId,
-                activeTools = activeTools,
-                conversationHistory = boundedHistory,
-                fewShotPrimer = fewShotPrimer,
+            sendMessageWithAgentUseCase.invoke(
+                userMessage = messageText,
+                fullHistory = _uiState.value.messages,
             ).collect { event ->
                 handleChatStreamEvent(event, currentConversationId)
             }
         }
     }
+
+    private fun buildUserMessage(messageText: String) =
+        ChatMessage(
+            id = UUID.randomUUID().toString(),
+            content = messageText,
+            role = MessageRole.USER,
+            status = MessageStatus.SENT,
+            timeStamp = System.currentTimeMillis()
+        )
+
 
     private suspend fun handleChatStreamEvent(
         event: ChatStreamEvent,
@@ -470,7 +437,7 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 clearConversationUseCase(currentConversationId)
-                stateManager.reset()
+                resetConversationUseCase()
                 _uiState.update {
                     it.copy(
                         title = "New Chat",
