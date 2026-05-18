@@ -5,6 +5,7 @@ import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatConversation
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
@@ -59,7 +60,9 @@ interface ChatRepository {
         message: String,
         systemPrompt: String,
         conversationId: String,
-        conversationHistory: List<ChatMessage>
+        activeTools: List<Tool>,
+        conversationHistory: List<ChatMessage>,
+        fewShotPrimer: String?
     ): Flow<ChatStreamEvent>
 
     /**

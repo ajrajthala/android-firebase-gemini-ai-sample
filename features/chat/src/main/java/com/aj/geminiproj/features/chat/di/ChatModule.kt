@@ -26,7 +26,7 @@ val chatModule = module {
     factory { SaveConversationUseCase(get()) }
     factory { GenerateConversationTitleUseCase(get()) }
     factory { SaveMessageUseCase(get()) }
-    factory{ SendMessageWithToolsUseCase(get()) }
+    factory { SendMessageWithToolsUseCase(get()) }
 
     viewModel { params ->
         ChatViewModel(
@@ -39,9 +39,11 @@ val chatModule = module {
             saveMessageUseCase = get(),
             generateConversationTitleUseCase = get(),
             sendMessageWithToolsUseCase = get(),
-            promptRouter = get()
+            stateManager = get(),
+            domainRegistry = get(),
+            domainResolver = get(),
         )
     }
 
-    
+
 }

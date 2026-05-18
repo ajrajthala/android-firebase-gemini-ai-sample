@@ -1,13 +1,14 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
 import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
-import com.aj.geminiproj.core.ai.firebase.registry.ToolRegistry
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent.ToolCompleted
 import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.core.model.tool.ToolResult
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
@@ -44,7 +45,7 @@ Orchestrates multi-turn conversations with Gemini including tool execution.
  * 10 rounds is generous for any realistic use case.
  */
 class GeminiOrchestrator(
-    private val registry: ToolRegistry,
+    private val domainRegistry : SemanticDomainRegistry,
     private val dispatcher: ToolDispatcher,
     private val mapper: FirebaseToolMapper,
     private val maxToolRounds: Int = 10,
@@ -63,7 +64,7 @@ class GeminiOrchestrator(
         """.trimIndent()
     }
 
-    fun chat(
+    fun chatWithTools(
         /**
          * Initiates a multi-turn chat conversation with Gemini, handling tool execution and streaming responses.
          *
@@ -77,12 +78,13 @@ class GeminiOrchestrator(
         userPrompt: String,
         systemPrompt: String = defaultSystemPrompt,
         history: List<Content> = emptyList(),
+        tools: List<Tool>,
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
 
         logUserMessage(userPrompt)
 
-        val firebaseTool = mapper.toFirebaseTool(registry.tools)
+        val firebaseTool = mapper.toFirebaseTool(tools)
         val model =
             Firebase.ai().generativeModel(
                 modelName = modelName,
@@ -120,7 +122,7 @@ class GeminiOrchestrator(
                                     modelFunctionCallParts.add(part)
 
                                     // Notify UI that a tool is starting
-                                    val tool = registry.getToolByName(part.name)
+                                    val tool = domainRegistry.getToolByName(part.name)
                                     logToolCall(part.name, part.args)
                                     emit(
                                         ChatStreamEvent.ToolExecuting(
@@ -284,13 +286,22 @@ class GeminiOrchestrator(
     fun sendChatMessageWithTools(
         message: String,
         systemPrompt: String,
-        conversationHistory: List<ChatMessage>
+        conversationHistory: List<ChatMessage>,
+        activeTools: List<Tool>, // only active domain tools
+        fewShotPrimer: String? = null // injected only once
     ): Flow<ChatStreamEvent> {
-        val firebaseChatHistory = conversationHistory.toFirebaseChatHistory()
-        return chat(
+        val firebaseChatHistory = conversationHistory.toFirebaseChatHistory().toMutableList()
+
+        // Inject few-shot primer as a priming model turn at the start of history
+        if (!fewShotPrimer.isNullOrBlank()) {
+            firebaseChatHistory.add(0, content(role = "model") { text(fewShotPrimer) })
+        }
+
+        return chatWithTools(
             userPrompt = message,
             systemPrompt = systemPrompt,
             history = firebaseChatHistory,
+            tools = activeTools,
             onHistoryUpdated = { },
         )
     }

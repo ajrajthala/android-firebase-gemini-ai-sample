@@ -10,11 +10,11 @@ import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.core.model.StreamState
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
+import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
-import com.google.firebase.ai.type.QuotaExceededException
 
 class AiRepositoryImpl(
     private val aiClient: FirebaseAiClient,
@@ -83,8 +83,16 @@ class AiRepositoryImpl(
     override suspend fun sendMessageWithTools(
         message: String,
         systemPrompt: String,
-        conversationHistory: List<ChatMessage>
+        activeTools: List<Tool>,
+        conversationHistory: List<ChatMessage>,
+        fewShotPrimer: String?
     ): Flow<ChatStreamEvent> {
-        return geminiOrchestrator.sendChatMessageWithTools(message, systemPrompt, conversationHistory)
+        return geminiOrchestrator.sendChatMessageWithTools(
+            message,
+            systemPrompt,
+            conversationHistory,
+            activeTools,
+            fewShotPrimer
+        )
     }
 }

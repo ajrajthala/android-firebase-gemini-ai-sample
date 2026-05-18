@@ -1,9 +1,9 @@
 package com.aj.geminiproj.core.ai.firebase.dispatcher
 
-import com.aj.geminiproj.core.ai.firebase.registry.ToolRegistry
+import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
 import com.aj.geminiproj.core.model.tool.ToolResult
 
-class ToolDispatcher(private val registry: ToolRegistry) {
+class ToolDispatcher(private val registry: SemanticDomainRegistry) {
     suspend fun dispatch(functionName: String, args: Map<String, Any>): ToolResult {
         val tool = registry.getToolByName(functionName)
             ?: return ToolResult.Error("Tool not found: $functionName", isRetryable = false)

@@ -4,6 +4,7 @@ import com.aj.geminiproj.core.model.AiResult
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.StreamState
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
+import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
 
 interface AiRepository {
@@ -38,7 +39,9 @@ interface AiRepository {
     suspend fun sendMessageWithTools(
         message: String,
         systemPrompt: String,
-        conversationHistory: List<ChatMessage> = emptyList()
+        activeTools:List<Tool>,
+        conversationHistory: List<ChatMessage> = emptyList(),
+        fewShotPrimer:String? = null
     ): Flow<ChatStreamEvent>
 
 }

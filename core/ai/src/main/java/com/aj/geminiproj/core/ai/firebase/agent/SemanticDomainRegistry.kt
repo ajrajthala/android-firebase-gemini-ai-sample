@@ -9,6 +9,13 @@ class SemanticDomainRegistry : KoinComponent {
 
     val domains: List<SemanticDomain> by lazy { buildDomains() }
 
+    fun getToolsForDomains(activeDomains: List<SemanticDomain>): List<Tool> {
+        val domainIds = activeDomains.map { it.id }.toSet()
+        return domains.filter { it.id in domainIds }
+            .flatMap { it.tools }
+            .distinctBy { it.definition.functionName }
+    }
+
     private fun buildDomains(): List<SemanticDomain> {
         val calendarTools = allTools.filter { tool ->
             tool.definition.functionName in listOf(
@@ -131,4 +138,6 @@ class SemanticDomainRegistry : KoinComponent {
             )
         )
     }
+
+    fun getToolByName(name: String) = allTools.firstOrNull(){it.definition.functionName == name}
 }
