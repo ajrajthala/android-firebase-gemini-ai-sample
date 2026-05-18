@@ -27,7 +27,7 @@ class SemanticDomainRegistry : KoinComponent {
 
         val contactTools = allTools.filter { tool ->
             tool.definition.functionName in listOf(
-                "get_contact",
+                "find_contact",
             )
         }
 
@@ -58,7 +58,7 @@ class SemanticDomainRegistry : KoinComponent {
                 fewShotExamples = """
                     ### CALENDAR — Fetch events
                     User: What do I have on Friday?
-                    Assistant: [calls get_calendar_events startOfDayMs=<day_start_epoch> endOfDayMs=<day_end_epoch>]
+                    Assistant: [calls get_calendar_events_for_day startOfDayMs=<day_start_epoch> endOfDayMs=<day_end_epoch>]
                     Tool: [{"title":"Team Standup","time":"10:00 AM"},{"title":"Lunch with Sara","time":"12:30 PM"}]
                     Assistant: You have 2 events on Friday:
                     - 10:00 AM — Team Standup
@@ -79,7 +79,7 @@ class SemanticDomainRegistry : KoinComponent {
 
                     ### CALENDAR — Create event with contact
                     User: I need to catchup with Sarah tomorrow at 2 PM.
-                    Assistant: [calls get_contact name="Sarah"]
+                    Assistant: [calls find_contact name="Sarah"]
                     Tool: {"name":"Sarah Chen","email":"sarah@example.com"}
                     Assistant: [calls is_time_slot_available startTimeMs=<epoch> endTimeMs=<epoch>]
                     Tool: {"available": true}
@@ -93,7 +93,7 @@ class SemanticDomainRegistry : KoinComponent {
 
                     ### CALENDAR — No results
                     User: Do I have anything Friday at 8 PM?
-                    Assistant: [calls get_calendar_events date=Friday time="8:00 PM"]
+                    Assistant: [calls get_calendar_events_for_day date=Friday time="8:00 PM"]
                     Tool: []
                     Assistant: No events found at that time. Want me to check another slot?
                 """.trimIndent()

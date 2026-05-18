@@ -18,13 +18,14 @@ class AgentContextBuilder {
      */
     fun buildSystemPrompt(activeDomains: List<SemanticDomain>): String {
         val date = SimpleDateFormat("EEEE, MMMM dd yyyy", Locale.getDefault()).format(Date())
+        val domainWithTools = activeDomains.filter { it.tools.isNotEmpty() }
         return buildString {
             appendLine(coreRules(date))
             appendLine()
             appendLine(buildCapabilitySummary(activeDomains))
-            if (activeDomains.isNotEmpty()) {
+            if (domainWithTools.isNotEmpty()) {
                 appendLine()
-                activeDomains.forEach { domain ->
+                domainWithTools.forEach { domain ->
                     appendLine(domain.systemFragment)
                 }
             }
@@ -39,7 +40,7 @@ class AgentContextBuilder {
 
     // layer 1: Core rules (~100 tokens, always present)
     private fun coreRules(currentDate: String) = """
-        YOu are a helpful Android assistant.
+        You are a helpful Android assistant.
         Today is $currentDate.
         
         Rules:
@@ -66,7 +67,7 @@ class AgentContextBuilder {
                 val hint = when (domain.id) {
                     "CALENDAR" -> "Calendar tools - Create, fetch, update, events and check availability."
                     "CONTACTS" -> "Contact tools - look up people, phone numbers, and email addresses."
-                    else -> null
+                    else -> "${domain.id} tools"
                 }
                 appendLine("- $hint")
             }
