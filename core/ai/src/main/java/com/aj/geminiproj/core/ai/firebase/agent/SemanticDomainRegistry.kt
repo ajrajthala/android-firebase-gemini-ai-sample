@@ -20,17 +20,14 @@ class SemanticDomainRegistry : KoinComponent {
         val calendarTools = allTools.filter { tool ->
             tool.definition.functionName in listOf(
                 "create_calendar_event",
-                "get_calendar_events",
-                "check_availability",
-                "update_calendar_event",
-                "delete_calendar_event"
+                "get_calendar_events_for_day",
+                "is_time_slot_available"
             )
         }
 
         val contactTools = allTools.filter { tool ->
             tool.definition.functionName in listOf(
                 "get_contact",
-                "search_contacts"
             )
         }
 
@@ -46,6 +43,12 @@ class SemanticDomainRegistry : KoinComponent {
                 tools = calendarTools,
                 systemFragment = """
                     Calendar rules:
+                    - Use get_calendar_events_for_day to fetch events.
+                        It requires startOfDayMs and endOfDayMs as epoch milliseconds.
+                        Today's startOfDayMs and endOfDayMs must be computed from date provided.
+                    - Use create_calendar_event to create events.
+                      It requires title, startTimeMs, endTimeMs and epoch milliseconds.
+                    - Use is_time_slot_available to check if a time slot is free.
                     - Use calendar tools to create, fetch, and update events.
                     - If multiple events match, show up to 3 and ask the user to choose.
                     - If a time slot is unavailable, suggest the next available slot.
@@ -55,7 +58,7 @@ class SemanticDomainRegistry : KoinComponent {
                 fewShotExamples = """
                     ### CALENDAR — Fetch events
                     User: What do I have on Friday?
-                    Assistant: [calls get_calendar_events date=Friday]
+                    Assistant: [calls get_calendar_events startOfDayMs=<day_start_epoch> endOfDayMs=<day_end_epoch>]
                     Tool: [{"title":"Team Standup","time":"10:00 AM"},{"title":"Lunch with Sara","time":"12:30 PM"}]
                     Assistant: You have 2 events on Friday:
                     - 10:00 AM — Team Standup
@@ -63,17 +66,24 @@ class SemanticDomainRegistry : KoinComponent {
 
                     ### CALENDAR — Create event (all info)
                     User: Schedule a dentist appointment tomorrow at 3 PM for 1 hour.
-                    Assistant: [calls create_calendar_event title="Dentist Appointment" date=tomorrow time="3:00 PM" duration=60]
+                    Assistant: [calls create_calendar_event title="Dentist Appointment" startTimeMs=<epoch> endTimeMs<epoch>]
                     Tool: {"status":"created"}
                     Assistant: Done! Dentist Appointment scheduled for tomorrow at 3:00 PM.
+                    
+                    ### CALENDAR - Check availability
+                    User: Am I free tomorrow at 2 PM
+                    Assistant: [calls is_time_slot_available startTimeMs=<epoch> endTimeMs=<epoch>]
+                    Tools:{"available":true}
+                    Assistant: Yes, you're free at 2:00 PM tomorrow.                   
+         
 
                     ### CALENDAR — Create event with contact
                     User: I need to catchup with Sarah tomorrow at 2 PM.
                     Assistant: [calls get_contact name="Sarah"]
                     Tool: {"name":"Sarah Chen","email":"sarah@example.com"}
-                    Assistant: [calls check_availability date=tomorrow time="2:00 PM" duration=60]
+                    Assistant: [calls is_time_slot_available startTimeMs=<epoch> endTimeMs=<epoch>]
                     Tool: {"available": true}
-                    Assistant: [calls create_calendar_event title="Catchup with Sarah Chen" date=tomorrow time="2:00 PM" duration=60 attendees=["sarah@example.com"]]
+                    Assistant: [calls create_calendar_event title="Catchup with Sarah Chen" startTimeMs=<epoch> endTimeMs=<epoch> attendees=["sarah@example.com"]]
                     Tool: {"status":"created","invite_sent":true}
                     Assistant: Done! Catchup with Sarah Chen scheduled for tomorrow at 2:00 PM.
 
@@ -109,13 +119,13 @@ class SemanticDomainRegistry : KoinComponent {
                 fewShotExamples = """
                     ### CONTACTS — One match
                     User: What's John Smith's number?
-                    Assistant: [calls get_contact name="John Smith"]
+                    Assistant: [calls find_contact name="John Smith"]
                     Tool: [{"name":"John Smith","phone":"+1-555-0192"}]
                     Assistant: John Smith's number is +1-555-0192.
 
                     ### CONTACTS — Multiple matches
                     User: Find Sarah's email.
-                    Assistant: [calls get_contact name="Sarah"]
+                    Assistant: [calls find_contact name="Sarah"]
                     Tool: [{"name":"Sarah Lee","email":"sarah.lee@co.com"},{"name":"Sarah Kim","email":"sarah.kim@co.com"}]
                     Assistant: I found 2 contacts named Sarah — which one?
                     1. Sarah Lee — sarah.lee@co.com
@@ -123,13 +133,13 @@ class SemanticDomainRegistry : KoinComponent {
 
                     ### CONTACTS — No match
                     User: What's Olivia Chen's number?
-                    Assistant: [calls get_contact name="Olivia Chen"]
+                    Assistant: [calls find_contact name="Olivia Chen"]
                     Tool: []
                     Assistant: I couldn't find Olivia Chen. Check the spelling or try another name.
 
                     ### CONTACTS — Multiple values
                     User: What's Alex's email?
-                    Assistant: [calls get_contact name="Alex"]
+                    Assistant: [calls find_contact name="Alex"]
                     Tool: [{"name":"Alex Brown","emails":["alex@work.com","alex@gmail.com"],"primary_email":null}]
                     Assistant: Alex has 2 emails — which should I use?
                     1. alex@work.com

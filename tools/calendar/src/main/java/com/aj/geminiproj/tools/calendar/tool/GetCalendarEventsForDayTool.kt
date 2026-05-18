@@ -57,7 +57,7 @@ class GetCalendarEventsForDayTool(
                 Log.w(TAG, "result error=invalid_endOfDayMs args =$parameters")
                 return ToolResult.Error("Missing or invalid endOfDayMs")
             }
-        if (end > start) return ToolResult.Error("'endOfDayMs' must be greater than 'startOfDayMs'.")
+        if (end < start) return ToolResult.Error("'endOfDayMs' must be greater than 'startOfDayMs'.")
         val events = calendarRepository.getEventsForDay(startOfDayMs = start, endOfDayMs = end)
 
         val eventMaps = events.map { event ->
