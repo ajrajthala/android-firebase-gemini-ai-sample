@@ -110,7 +110,12 @@ class GeminiOrchestrator(
 
                 model.generateContentStream(turnHistory)
                     .collect { chunk ->
-                        chunk.candidates.firstOrNull()?.content?.parts?.forEach { part ->
+                        val candidate = chunk.candidates.firstOrNull()
+                        if (candidate?.finishReason != null && candidate.finishReason != com.google.firebase.ai.type.FinishReason.STOP) {
+                             Log.w(TAG, "Streaming stopped with reason: ${candidate.finishReason}")
+                        }
+
+                        candidate?.content?.parts?.forEach { part ->
                             when (part) {
                                 is TextPart -> {
                                     modelTextParts.add(part)
@@ -159,10 +164,12 @@ class GeminiOrchestrator(
                     break
                 }
 
-                val modelToolCallContent = content(role = "model") {
+                // If tools were called, include any text parts that preceded the tool call
+                val modelTurnContent = content(role = "model") {
+                    modelTextParts.forEach { text(it.text) }
                     modelFunctionCallParts.forEach { part(it) }
                 }
-                turnHistory.add(modelToolCallContent)
+                turnHistory.add(modelTurnContent)
 
                 // Execute all tools called this round
                 val functionResponseParts = mutableListOf<FunctionResponsePart>()
@@ -214,14 +221,14 @@ class GeminiOrchestrator(
                     }
                     // Feed result back to Gemini regardless of outcome so it can decide how to proceed (try again, skip tool, etc)
                     functionResponseParts.add(mapper.toFunctionResponsePart(functionName, result))
-
-                    // Append all function responses as a single user turn
-                    val functionResponseContent = content(role = "user") {
-                        functionResponseParts.forEach { part(it) }
-                    }
-                    turnHistory.add(functionResponseContent)
-                    toolRounds++
                 }
+
+                // Append all function responses as a single user turn
+                val functionResponseContent = content(role = "user") {
+                    functionResponseParts.forEach { part(it) }
+                }
+                turnHistory.add(functionResponseContent)
+                toolRounds++
 
                 // Safety check to prevent infinite loops
                 if (toolRounds >= maxToolRounds) {
@@ -238,12 +245,11 @@ class GeminiOrchestrator(
         } catch (e: Exception) {
             Log.e(TAG, "Stream error: ${e.message}", e)
             e.printStackTrace()
-            val message =
-                if (e is QuotaExceededException) {
-                    "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
-                } else {
-                    "Something went wrong. Try again..."
-                }
+            val message = when {
+                e is QuotaExceededException -> "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
+                e.javaClass.simpleName == "ResponseStoppedException" -> "Content generation was stopped (e.g., due to safety filters or an internal issue). Please try a different prompt."
+                else -> "Something went wrong. Try again..."
+            }
             emit(
                 ChatStreamEvent.StreamError(
                     e,

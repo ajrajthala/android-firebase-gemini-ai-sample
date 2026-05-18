@@ -229,7 +229,7 @@ class ChatViewModel(
             sendMessageWithToolsUseCase(
                 message = messageText,
                 systemPrompt = systemPrompt,
-                conversationId = conversationId,
+                conversationId = currentConversationId,
                 activeTools = activeTools,
                 conversationHistory = boundedHistory,
                 fewShotPrimer = fewShotPrimer,
