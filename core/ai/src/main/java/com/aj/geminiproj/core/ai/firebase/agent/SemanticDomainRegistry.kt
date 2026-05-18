@@ -1,11 +1,19 @@
 package com.aj.geminiproj.core.ai.firebase.agent
 
+import android.util.Log
 import com.aj.geminiproj.core.model.tool.Tool
 import org.koin.core.component.KoinComponent
 
 class SemanticDomainRegistry : KoinComponent {
 
-    private val allTools: List<Tool> by lazy { getKoin().getAll() }
+    private val allTools: List<Tool> by lazy {
+        getKoin().getAll<Tool>().also {
+            Log.i(
+                "SemanticDomainRegistry",
+                "allTools loaded: ${it.size} -> ${it.map { t -> t.definition.functionName }}"
+            )
+        }
+    }
 
     val domains: List<SemanticDomain> by lazy { buildDomains() }
 
@@ -149,5 +157,5 @@ class SemanticDomainRegistry : KoinComponent {
         )
     }
 
-    fun getToolByName(name: String) = allTools.firstOrNull(){it.definition.functionName == name}
+    fun getToolByName(name: String) = allTools.firstOrNull() { it.definition.functionName == name }
 }

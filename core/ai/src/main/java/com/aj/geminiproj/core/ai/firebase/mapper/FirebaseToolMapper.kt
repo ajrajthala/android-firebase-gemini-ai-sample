@@ -89,7 +89,11 @@ class FirebaseToolMapper {
     private fun toJsonElement(value: Any?): JsonElement {
         return when (value) {
             is String -> Json.encodeToJsonElement(value)
-            is Number -> Json.encodeToJsonElement(value)
+            is Int -> Json.encodeToJsonElement(value)
+            is Long -> Json.encodeToJsonElement(value)
+            is Double -> Json.encodeToJsonElement(value)
+            is Float -> Json.encodeToJsonElement(value)
+            is Number -> Json.encodeToJsonElement(value.toDouble())
             is Boolean -> Json.encodeToJsonElement(value)
             is List<*> -> JsonArray(value.map { toJsonElement(it) }) // assuming list contains serializable items
             is Map<*, *> -> buildJsonObject(value as Map<String, Any>)

@@ -80,7 +80,8 @@ class ConversationStateManager(
     }
 
     fun consumeFewShotPrimers(): String? {
-        val newDomains = activeDomains.filter { !introducedDomains.contains(it.id) }
+        var domainsWithTools = activeDomains.filter { it.tools.isNotEmpty() }
+        val newDomains = domainsWithTools.filter { !introducedDomains.contains(it.id) }
         if (newDomains.isEmpty()) return null
         introducedDomains.addAll(newDomains.map { it.id })
         Log.i(TAG, "Injecting few-shot primers for: ${newDomains.map { it.id }}")

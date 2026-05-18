@@ -16,7 +16,10 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
+import com.google.firebase.ai.type.HarmBlockThreshold
+import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.QuotaExceededException
+import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
@@ -87,14 +90,26 @@ class GeminiOrchestrator(
         tracer.logSystemPrompt(systemPrompt)
         tracer.logToolsLoaded(tools)
 
-        val firebaseTool = mapper.toFirebaseTool(tools)
         val model =
-            Firebase.ai().generativeModel(
-                modelName = modelName,
-                tools = listOf(firebaseTool),
-                systemInstruction = content { text(systemPrompt) }
-            )
-
+            if (tools.isNotEmpty()) {
+                val firebaseTool = mapper.toFirebaseTool(tools)
+                Firebase.ai().generativeModel(
+                    modelName = modelName,
+                    tools = listOf(firebaseTool),
+                    systemInstruction = content { text(systemPrompt) },
+                    safetySettings = listOf(
+                        SafetySetting(HarmCategory.DANGEROUS_CONTENT, HarmBlockThreshold.ONLY_HIGH),
+                        SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.ONLY_HIGH),
+                        SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.ONLY_HIGH),
+                        SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, HarmBlockThreshold.ONLY_HIGH)
+                    )
+                )
+            } else {
+                Firebase.ai().generativeModel(
+                    modelName = modelName,
+                    systemInstruction = content { text(systemPrompt) }
+                )
+            }
         //
         val turnHistory = history.toMutableList()
 

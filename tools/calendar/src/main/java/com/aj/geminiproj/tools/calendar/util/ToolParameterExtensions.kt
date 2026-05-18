@@ -6,7 +6,7 @@ internal fun Map<String, Any>.longParam(key: String): Long? {
     return when (raw) {
         is Number -> raw.toLong()
         is String -> raw.toLongOrNull()
-        else -> null
+        else -> raw?.toString()?.trim()?.toLongOrNull()
     }
 }
 

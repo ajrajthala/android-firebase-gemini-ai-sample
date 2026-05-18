@@ -14,7 +14,7 @@ import org.json.JSONObject
 class SemanticDomainResolver(
     private val registry: SemanticDomainRegistry,
     private val confidenceThreshold: Double = .60,
-    private val modelName: String = "gemini-3.0-flash-preview"
+    private val modelName: String = "gemini-3-flash-preview"
 ) {
     companion object {
         private const val TAG = "SemanticDomainResolver"
@@ -38,6 +38,7 @@ class SemanticDomainResolver(
             Log.i(TAG, "Active domains: ${active.map { it.id }}")
             active
         } catch (e: Exception) {
+            e.printStackTrace()
             emptyList()
         }
     }
