@@ -1,6 +1,7 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
 import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.agent.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
@@ -45,9 +46,10 @@ Orchestrates multi-turn conversations with Gemini including tool execution.
  * 10 rounds is generous for any realistic use case.
  */
 class GeminiOrchestrator(
-    private val domainRegistry : SemanticDomainRegistry,
+    private val domainRegistry: SemanticDomainRegistry,
     private val dispatcher: ToolDispatcher,
     private val mapper: FirebaseToolMapper,
+    private val tracer: AgentTracer,
     private val maxToolRounds: Int = 10,
     private val modelName: String = "gemini-2.5-flash"
 ) {
@@ -82,7 +84,8 @@ class GeminiOrchestrator(
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
 
-        logUserMessage(userPrompt)
+        tracer.logSystemPrompt(systemPrompt)
+        tracer.logToolsLoaded(tools)
 
         val firebaseTool = mapper.toFirebaseTool(tools)
         val model =
@@ -112,14 +115,13 @@ class GeminiOrchestrator(
                     .collect { chunk ->
                         val candidate = chunk.candidates.firstOrNull()
                         if (candidate?.finishReason != null && candidate.finishReason != com.google.firebase.ai.type.FinishReason.STOP) {
-                             Log.w(TAG, "Streaming stopped with reason: ${candidate.finishReason}")
+                            Log.w(TAG, "Streaming stopped with reason: ${candidate.finishReason}")
                         }
 
                         candidate?.content?.parts?.forEach { part ->
                             when (part) {
                                 is TextPart -> {
                                     modelTextParts.add(part)
-                                    logAiResponseChunk(part.text)
                                     emit(ChatStreamEvent.TextChunk(part.text))
                                 }
 
@@ -128,7 +130,7 @@ class GeminiOrchestrator(
 
                                     // Notify UI that a tool is starting
                                     val tool = domainRegistry.getToolByName(part.name)
-                                    logToolCall(part.name, part.args)
+                                    tracer.logToolCall(part.name, part.args)
                                     emit(
                                         ChatStreamEvent.ToolExecuting(
                                             functionName = part.name,
@@ -137,10 +139,7 @@ class GeminiOrchestrator(
                                     )
 
                                     //Collect for batch execution after stream completes
-                                    functionCallsThisRound.add(
-                                        part.name to (part.args ?: emptyMap())
-                                    )
-
+                                    functionCallsThisRound.add(part.name to (part.args))
                                 }
 
                                 else -> Unit // ignore unsupported part types for now
@@ -150,7 +149,7 @@ class GeminiOrchestrator(
 
                 val fullText = modelTextParts.joinToString(",") { it.text }
                 if (fullText.isNotBlank()) {
-                    logAiResponseCompleted(fullText)
+                    tracer.logTurnCompletion(fullText)
                 }
 
                 if (functionCallsThisRound.isEmpty()) {
@@ -174,8 +173,10 @@ class GeminiOrchestrator(
                 // Execute all tools called this round
                 val functionResponseParts = mutableListOf<FunctionResponsePart>()
                 functionCallsThisRound.forEach { (functionName, args) ->
+                    val toolStart = System.currentTimeMillis()
                     val result = dispatcher.dispatch(functionName, args)
-                    logToolResult(functionName, result)
+                    val toolLatency = System.currentTimeMillis() - toolStart
+                    tracer.logToolResult(functionName, result, toolLatency)
                     when (result) {
                         is ToolResult.Success -> {
                             emit(
@@ -243,7 +244,7 @@ class GeminiOrchestrator(
 
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Stream error: ${e.message}", e)
+            tracer.logTurnError(e)
             e.printStackTrace()
             val message = when {
                 e is QuotaExceededException -> "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
@@ -310,60 +311,5 @@ class GeminiOrchestrator(
             tools = activeTools,
             onHistoryUpdated = { },
         )
-    }
-
-
-    private fun logUserMessage(message: String) {
-        Log.i(TAG, "----- USER MESSAGE --------------------")
-        Log.i(TAG, message)
-        Log.i(TAG, "---------------------------------------")
-    }
-
-    private fun logAiResponseChunk(chunk: String) {
-        Log.d(TAG, "| AI > $chunk")
-    }
-
-    private fun logAiResponseCompleted(fullText: String) {
-        Log.i(TAG, "---- AI RESPONSE ------------------------")
-        Log.i(TAG, fullText)
-        Log.i(TAG, "-----------------------------------------")
-    }
-
-    private fun logToolCall(functionName: String, args: Map<String, Any>) {
-        Log.i(TAG, "---- TOOL CALL ------------------------")
-        Log.i(TAG, functionName + "\n" + args.forEach { (k, v) -> Log.i(TAG, "Arg : $k = $v") })
-        Log.i(TAG, "-----------------------------------------")
-    }
-
-    private fun logToolResult(functionName: String, result: ToolResult) {
-        Log.i(TAG, "---- TOOL RESULT ------------------------")
-        Log.i(TAG, functionName)
-        when (result) {
-            is ToolResult.Error -> {
-                Log.w(TAG, "Status: ERROR")
-                Log.w(TAG, "Message: ${result.message}")
-                Log.w(TAG, "Retryable: ${result.isRetryable}")
-            }
-
-            is ToolResult.NeedsConfirmation -> {
-                Log.i(TAG, "Status: NEED CONFIRMATION")
-                Log.i(TAG, "Message: ${result.message}")
-                result.options.forEachIndexed { index, option ->
-                    Log.i(TAG, "Option[$index]: $option")
-                }
-            }
-
-            is ToolResult.PermissionDenied -> {
-                Log.w(TAG, "Status: PERMISSION DENIED")
-                Log.w(TAG, "Message: ${result.message}")
-                Log.w(TAG, "Retryable: ${result.permission}")
-            }
-
-            is ToolResult.Success -> {
-                Log.w(TAG, "Status: SUCCESS")
-                result.data.forEach { (k, v) -> Log.i(TAG, "Arg : $k = $v") }
-            }
-        }
-        Log.i(TAG, "-----------------------------------------")
     }
 }
