@@ -11,29 +11,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.TimeZone
 
-class CalendarRepositoryImpl (private val context: Context): CalendarRepository {
+class CalendarRepositoryImpl(private val context: Context) : CalendarRepository {
     override suspend fun getEventsForDay(
         startOfDayMs: Long,
         endOfDayMs: Long,
     ): List<CalendarEvent> = withContext(Dispatchers.IO) {
-        val uri = CalendarContract.Events.CONTENT_URI
+        // Using CalendarContracts.Instances table instead of events because CalendarContracts.Events misses the recurring events,
+        // handles DURATION-based events, overlapping query windows
+        val uri = CalendarContract.Instances.CONTENT_URI.buildUpon()
+            .appendPath(startOfDayMs.toString())
+            .appendPath(endOfDayMs.toString())
+            .build()
         val projection = arrayOf(
-            CalendarContract.Events._ID,
-            CalendarContract.Events.TITLE,
-            CalendarContract.Events.DTSTART,
-            CalendarContract.Events.DTEND,
-            CalendarContract.Events.EVENT_LOCATION,
+            CalendarContract.Instances.EVENT_ID,
+            CalendarContract.Instances.TITLE,
+            CalendarContract.Instances.BEGIN, // always populated
+            CalendarContract.Instances.END, // always populated (Instances resolves DURATION based)
+            CalendarContract.Instances.EVENT_LOCATION,
+            CalendarContract.Instances.ALL_DAY,
+            CalendarContract.Events.DELETED
         )
-        val selection = """
-            ${CalendarContract.Events.DTSTART} >= ?
-            AND ${CalendarContract.Events.DTEND} <= ?
-            AND ${CalendarContract.Events.DELETED} = 0
-        """.trimIndent()
-        val selectionArgs = arrayOf(
-            startOfDayMs.toString(),
-            endOfDayMs.toString(),
-        )
-        val sortOrder = "${CalendarContract.Events.DTSTART} ASC"
+        val selection = " ${CalendarContract.Events.DELETED} = 0"
+        val sortOrder = "${CalendarContract.Instances.BEGIN} ASC"
 
         val events = mutableListOf<CalendarEvent>()
 
@@ -41,26 +40,31 @@ class CalendarRepositoryImpl (private val context: Context): CalendarRepository 
             uri,
             projection,
             selection,
-            selectionArgs,
+            null,
             sortOrder,
         )?.use { cursor ->
             while (cursor.moveToNext()) {
                 val eventId = cursor.getLong(
-                    cursor.getColumnIndexOrThrow(CalendarContract.Events._ID)
+                    cursor.getColumnIndexOrThrow(CalendarContract.Instances.EVENT_ID)
+                )
+                val startMs = cursor.getLong(
+                    cursor.getColumnIndexOrThrow(CalendarContract.Instances.BEGIN)
+                )
+                val endMs = cursor.getLong(
+                    cursor.getColumnIndexOrThrow(CalendarContract.Instances.END)
+                )
+                val isAllDay = cursor.getLong(
+                    cursor.getColumnIndexOrThrow(CalendarContract.Instances.ALL_DAY)
                 )
                 events.add(
                     CalendarEvent(
                         id = eventId,
                         title = cursor.getString(
-                            cursor.getColumnIndexOrThrow(CalendarContract.Events.TITLE)
+                            cursor.getColumnIndexOrThrow(CalendarContract.Instances.TITLE)
                         ) ?: "Untitled",
                         description = "", // Description is not included in this query, would require additional query if needed
-                        startTime = cursor.getLong(
-                            cursor.getColumnIndexOrThrow(CalendarContract.Events.DTSTART)
-                        ),
-                        endTime = cursor.getLong(
-                            cursor.getColumnIndexOrThrow(CalendarContract.Events.DTEND)
-                        ),
+                        startTime = startMs,
+                        endTime = endMs,
                         location = cursor.getString(
                             cursor.getColumnIndexOrThrow(CalendarContract.Events.EVENT_LOCATION)
                         ),
