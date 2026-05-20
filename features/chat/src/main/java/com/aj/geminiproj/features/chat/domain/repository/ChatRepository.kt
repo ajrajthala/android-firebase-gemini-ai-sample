@@ -62,7 +62,8 @@ interface ChatRepository {
         conversationId: String,
         activeTools: List<Tool>,
         conversationHistory: List<ChatMessage>,
-        fewShotPrimer: String?
+        fewShotPrimer: String?,
+        turnId: String,
     ): Flow<ChatStreamEvent>
 
     /**

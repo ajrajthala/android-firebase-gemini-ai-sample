@@ -113,7 +113,7 @@ class AgentTracer {
 
     fun logTurnError(error: Throwable) {
         val totalMs = System.currentTimeMillis() - turnStartMs
-        Log.e(TAG, "  TURN_ERROR: ${error.message} total=${totalMs}ms")
+        Log.e(TAG, "  TURN_ERROR: ${error.message ?: "Unknown error"} total=${totalMs}ms")
         Log.e(TAG, SEPARATOR)
     }
 

@@ -85,14 +85,16 @@ class AiRepositoryImpl(
         systemPrompt: String,
         activeTools: List<Tool>,
         conversationHistory: List<ChatMessage>,
-        fewShotPrimer: String?
+        fewShotPrimer: String?,
+        turnId: String,
     ): Flow<ChatStreamEvent> {
         return geminiOrchestrator.sendChatMessageWithTools(
             message,
             systemPrompt,
             conversationHistory,
             activeTools,
-            fewShotPrimer
+            fewShotPrimer,
+            turnId
         )
     }
 }

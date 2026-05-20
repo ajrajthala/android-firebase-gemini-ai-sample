@@ -76,6 +76,7 @@ class ConversationAgent(
             activeTools = activeTools,
             conversationHistory = boundedHistory,
             fewShotPrimer = fewShotPrimer,
+            turnId = turnId
         ).collect { event ->
             emit(event)
         }

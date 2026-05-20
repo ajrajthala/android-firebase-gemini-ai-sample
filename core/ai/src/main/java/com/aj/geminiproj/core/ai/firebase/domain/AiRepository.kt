@@ -41,7 +41,8 @@ interface AiRepository {
         systemPrompt: String,
         activeTools:List<Tool>,
         conversationHistory: List<ChatMessage> = emptyList(),
-        fewShotPrimer:String? = null
+        fewShotPrimer:String? = null,
+        turnId: String,
     ): Flow<ChatStreamEvent>
 
 }

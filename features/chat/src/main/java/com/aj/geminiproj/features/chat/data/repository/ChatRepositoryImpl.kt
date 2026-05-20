@@ -83,14 +83,16 @@ class ChatRepositoryImpl(
         conversationId: String,
         activeTools: List<Tool>,
         conversationHistory: List<ChatMessage>,
-        fewShotPrimer: String?
+        fewShotPrimer: String?,
+        turnId: String
     ): Flow<ChatStreamEvent> {
         return aiRepository.sendMessageWithTools(
             message,
             systemPrompt,
             activeTools,
             conversationHistory,
-            fewShotPrimer
+            fewShotPrimer,
+            turnId
         )
     }
 }

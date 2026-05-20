@@ -88,8 +88,8 @@ class GeminiOrchestrator(
         history: List<Content> = emptyList(),
         tools: List<Tool>,
         onHistoryUpdated: (List<Content>) -> Unit,
+        turnId: String
     ): Flow<ChatStreamEvent> = flow {
-        val turnId = UUID.randomUUID().toString()
         tracer.beginTurn(turnId, userPrompt)
         tracer.logSystemPrompt(systemPrompt)
         tracer.logToolsLoaded(tools)
@@ -321,7 +321,8 @@ class GeminiOrchestrator(
         systemPrompt: String,
         conversationHistory: List<ChatMessage>,
         activeTools: List<Tool>, // only active domain tools
-        fewShotPrimer: String? = null // injected only once
+        fewShotPrimer: String? = null, // injected only once
+        turnId: String,
     ): Flow<ChatStreamEvent> {
         val firebaseChatHistory = conversationHistory.toFirebaseChatHistory().toMutableList()
 
@@ -336,6 +337,7 @@ class GeminiOrchestrator(
             history = firebaseChatHistory,
             tools = activeTools,
             onHistoryUpdated = { },
+            turnId = turnId
         )
     }
 }
