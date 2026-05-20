@@ -3,6 +3,7 @@ package com.aj.geminiproj.core.ai.firebase.orchestration
 import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.agent.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
+import com.aj.geminiproj.core.ai.firebase.agent.TurnTokenCounter
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.model.chat.ChatMessage
@@ -21,6 +22,7 @@ import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.QuotaExceededException
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -87,12 +89,12 @@ class GeminiOrchestrator(
         tools: List<Tool>,
         onHistoryUpdated: (List<Content>) -> Unit,
     ): Flow<ChatStreamEvent> = flow {
-
         val turnId = UUID.randomUUID().toString()
         tracer.beginTurn(turnId, userPrompt)
         tracer.logSystemPrompt(systemPrompt)
         tracer.logToolsLoaded(tools)
 
+        val tokenCounter = TurnTokenCounter()
         val model =
             if (tools.isNotEmpty()) {
                 val firebaseTool = mapper.toFirebaseTool(tools)
@@ -125,12 +127,14 @@ class GeminiOrchestrator(
 
         try {
             while (toolRounds < maxToolRounds) {
+                var lastUsageMetadata: UsageMetadata? = null
                 val functionCallsThisRound = mutableListOf<Pair<String, Map<String, Any>>>()
                 val modelTextParts = mutableListOf<TextPart>()
                 val modelFunctionCallParts = mutableListOf<FunctionCallPart>()
 
                 model.generateContentStream(turnHistory)
                     .collect { chunk ->
+                        chunk.usageMetadata?.let { lastUsageMetadata = it }
                         val candidate = chunk.candidates.firstOrNull()
                         if (candidate?.finishReason != null && candidate.finishReason != com.google.firebase.ai.type.FinishReason.STOP) {
                             Log.w(TAG, "Streaming stopped with reason: ${candidate.finishReason}")
@@ -165,10 +169,16 @@ class GeminiOrchestrator(
                         }
                     }
 
+                lastUsageMetadata?.let {
+                    tokenCounter.recordRound(
+                        promptTokens = it.promptTokenCount,
+                        candidateTokens = it.candidatesTokenCount ?: 0
+                    )
+                }
                 val fullText = modelTextParts.joinToString(",") { it.text }
 
                 if (functionCallsThisRound.isEmpty()) {
-                    tracer.logTurnCompletion(fullText)
+                    tracer.logTurnCompletion(fullText, tokenCounter.summary())
                     // No tools called, turn is complete
                     val modelContent = content(role = "model") {
                         modelTextParts.forEach { text(it.text) }

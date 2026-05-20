@@ -101,9 +101,12 @@ class AgentTracer {
     }
 
     //-------------- Turn completion -----------------
-    fun logTurnCompletion(aiResponse: String) {
+    fun logTurnCompletion(aiResponse: String, tokenSummary: TokenSummary? = null) {
         val totalMs = System.currentTimeMillis() - turnStartMs
         Log.i(TAG, "  AI_RESPONSE: ${aiResponse.take(150).replace("\n", " ")}")
+        tokenSummary?.let {
+            logTokenSummary(it)
+        }
         Log.i(TAG, "  TURN END id=$currentTurnId total=${totalMs}ms")
         Log.i(TAG, SEPARATOR)
     }
@@ -114,8 +117,18 @@ class AgentTracer {
         Log.e(TAG, SEPARATOR)
     }
 
-    fun logTopicShift(detected: Boolean, message: String){
-        if(detected) Log.i(TAG, "  TOPIC_SHIFT detected for: $message")
+    fun logTopicShift(detected: Boolean, message: String) {
+        if (detected) Log.i(TAG, "  TOPIC_SHIFT detected for: $message")
+    }
+
+    //---------------- Token Counter
+    fun logTokenSummary(summary: TokenSummary) {
+        Log.i(
+            TAG, "   TOKENS: prompt=${summary.promptTokens} " +
+                    "candidates=${summary.candidateTokens} " +
+                    "total=${summary.totalTokens} " +
+                    "rounds=${summary.toolRounds}"
+        )
     }
 
 }
