@@ -3,6 +3,10 @@ package com.aj.geminiproj.core.ai.firebase.dispatcher
 import android.util.Log
 import com.aj.geminiproj.core.model.tool.ParameterType
 import com.aj.geminiproj.core.model.tool.Tool
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlin.math.floor
 
 /**
@@ -34,7 +38,7 @@ class ToolValidator {
             }
 
         // Check for parameter types
-        args.forEach { argName, argValue ->
+        args.forEach { (argName, argValue) ->
             val paramDef = definition.parameters.find { it.name == argName }
             if (paramDef == null) {
                 //Unknown parameter type - warn but do not block as LLM may send extra fields
@@ -59,16 +63,19 @@ class ToolValidator {
         expectedType: ParameterType
     ): String? {
         val isValid = when (expectedType) {
-            ParameterType.STRING -> argValue is String
+            ParameterType.STRING -> argValue is String || (argValue is JsonPrimitive && argValue.isString)
             ParameterType.INTEGER -> argValue is Int || argValue is Long ||
                     (argValue is Double && argValue == floor(argValue)) ||
-                    (argValue is String && argValue.toLongOrNull() != null)
+                    (argValue is String && argValue.toLongOrNull() != null) ||
+                    (argValue is JsonPrimitive && argValue.longOrNull != null)
             ParameterType.NUMBER -> argValue is Number ||
-                    (argValue is String && argValue.toDoubleOrNull() != null)
-            ParameterType.BOOLEAN -> argValue is Boolean
+                    (argValue is String && argValue.toDoubleOrNull() != null) ||
+                    (argValue is JsonPrimitive && argValue.doubleOrNull != null)
+            ParameterType.BOOLEAN -> argValue is Boolean ||
+                    (argValue is JsonPrimitive && argValue.booleanOrNull != null)
             ParameterType.ARRAY -> argValue is List<*>
         }
-        return if (!isValid) "Parameter '$argName' expected '$expectedType' expected but got ${argValue::class.simpleName}"
+        return if (!isValid) "Parameter '$argName' expected '$expectedType' but got ${argValue::class.simpleName}"
         else null
     }
 }
