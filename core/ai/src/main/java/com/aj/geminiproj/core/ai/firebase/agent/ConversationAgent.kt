@@ -15,7 +15,8 @@ class ConversationAgent(
     private val domainResolver: SemanticDomainResolver,
     private val domainRegistry: SemanticDomainRegistry,
     private val tracer: AgentTracer,
-    private val orchestrator: GeminiOrchestrator
+    private val orchestrator: GeminiOrchestrator,
+    private val guardrail: InputGuardrail,
 ) {
 
     fun processMessage(
@@ -24,6 +25,21 @@ class ConversationAgent(
     ): Flow<ChatStreamEvent> = flow {
         val turnId = UUID.randomUUID().toString()
         tracer.beginTurn(turnId, userMessage)
+
+        // Input guardrail
+        when (val guardrail = guardrail.check(userMessage)) {
+            is InputGuardrail.GuardrailResult.Blocked -> {
+                emit(
+                    ChatStreamEvent.StreamError(
+                        throwable = SecurityException(guardrail.reason),
+                        errorMessage = "Unable to process the request. ${guardrail.reason}."
+                    )
+                )
+                return@flow
+            }
+
+            InputGuardrail.GuardrailResult.Allowed -> Unit
+        }
 
         //------- Step 1: Resolve domains (Once per conversation or on topic shift)
         val needsResolution =

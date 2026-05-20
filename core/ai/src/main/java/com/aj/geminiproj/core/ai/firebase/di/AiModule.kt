@@ -5,6 +5,7 @@ import com.aj.geminiproj.core.ai.firebase.agent.AgentContextBuilder
 import com.aj.geminiproj.core.ai.firebase.agent.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.agent.ConversationAgent
 import com.aj.geminiproj.core.ai.firebase.agent.ConversationStateManager
+import com.aj.geminiproj.core.ai.firebase.agent.InputGuardrail
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
 import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainResolver
 import com.aj.geminiproj.core.ai.firebase.data.AiRepositoryImpl
@@ -26,6 +27,7 @@ val aiModule = module {
     single { SemanticDomainResolver(registry = get()) }
     single { ConversationStateManager(contextBuilder = get()) }
     single { AgentTracer() }
+    single { InputGuardrail() }
 
     single {
         GeminiOrchestrator(
@@ -43,6 +45,7 @@ val aiModule = module {
             domainRegistry = get(),
             tracer = get(),
             orchestrator = get(),
+            guardrail = get(),
         )
     }
 }
