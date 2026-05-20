@@ -1,6 +1,8 @@
 package com.aj.geminiproj.core.ai.firebase.agent
 
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
@@ -17,10 +19,14 @@ class AgentContextBuilder {
      * Called when new conversation is started or topic shifts; active domains change
      */
     fun buildSystemPrompt(activeDomains: List<SemanticDomain>): String {
-        val date = SimpleDateFormat("EEEE, MMMM dd yyyy", Locale.getDefault()).format(Date())
+        // for device default timezone
+        val date = SimpleDateFormat("EEEE, MMMM dd yyyy z", Locale.getDefault()).format(Date())
+        val startOfDayMs =
+            LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
         val domainWithTools = activeDomains.filter { it.tools.isNotEmpty() }
         return buildString {
-            appendLine(coreRules(date))
+            appendLine(coreRules(date, startOfDayMs))
             appendLine()
             appendLine(buildCapabilitySummary(activeDomains))
             if (domainWithTools.isNotEmpty()) {
@@ -39,9 +45,11 @@ class AgentContextBuilder {
     }
 
     // layer 1: Core rules (~100 tokens, always present)
-    private fun coreRules(currentDate: String) = """
+    private fun coreRules(currentDate: String, startOfDayMs: Long) = """
         You are a helpful Android assistant.
-        Today is $currentDate.
+        Today is $currentDate. and Today's local timezone startOfDayMs is $startOfDayMs
+        When the user refers to time, use this local time as your reference.
+        Always provide dates and times in the user's local timezone.
         
         You HAVE access to (use the tools provided)
         - The user's calendar events

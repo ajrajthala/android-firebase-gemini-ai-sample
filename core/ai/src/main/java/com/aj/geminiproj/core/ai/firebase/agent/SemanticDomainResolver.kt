@@ -4,12 +4,12 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.QuotaExceededException
 import com.google.firebase.ai.type.content
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonPrimitive
-import org.json.JSONObject
 
 class SemanticDomainResolver(
     private val registry: SemanticDomainRegistry,
@@ -37,9 +37,13 @@ class SemanticDomainResolver(
             Log.i(TAG, "Domain scores: $scores")
             Log.i(TAG, "Active domains: ${active.map { it.id }}")
             active
+        } catch (e: QuotaExceededException) {
+            e.printStackTrace()
+            Log.w(TAG, "Quota exceeded during resolution - loading all domains as fallback")
+            domains
         } catch (e: Exception) {
             e.printStackTrace()
-            emptyList()
+            domains
         }
     }
 
@@ -93,6 +97,7 @@ class SemanticDomainResolver(
                 key to value.jsonPrimitive.double
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "Failed to parse domain scores from: $cleaned")
             emptyMap()
         }
