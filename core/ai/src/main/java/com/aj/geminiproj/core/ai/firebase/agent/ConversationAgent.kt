@@ -1,5 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.agent
 
+import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
@@ -13,10 +14,12 @@ import java.util.UUID
 class ConversationAgent(
     private val stateManager: ConversationStateManager,
     private val domainResolver: SemanticDomainResolver,
+    private val domainResolverFallback: DomainResolverFallback,
     private val domainRegistry: SemanticDomainRegistry,
     private val tracer: AgentTracer,
     private val orchestrator: GeminiOrchestrator,
     private val guardrail: InputGuardrail,
+    private val historySummarizer: HistorySummarizer
 ) {
 
     fun processMessage(
@@ -50,7 +53,14 @@ class ConversationAgent(
         )
         if (needsResolution) {
             val resolutionStartTime = System.currentTimeMillis()
-            val resolvedDomains = domainResolver.resolve(userMessage)
+            val resolvedDomains = try {
+                RetryHandler.withRetry(operationName = "DomainResolver", maxAttempts = 2) {
+                    domainResolver.resolve(userMessage)
+                }
+            } catch (e: Exception) {
+                Log.w("ConversationAgent", "Domain resolver failed, using keyword fallback")
+                domainResolverFallback.resolve(userMessage)
+            }
             stateManager.setActiveDomains(resolvedDomains)
             tracer.logDomainResolution(
                 domains = resolvedDomains,
@@ -80,11 +90,17 @@ class ConversationAgent(
         val activeTools = domainRegistry.getToolsForDomains(stateManager.getActiveDomains())
 
         //-----Step 5: Bounded history (Sliding window)
+        if (stateManager.shouldSummarize(fullHistory)) {
+            val oldMessage = fullHistory.dropLast(stateManager.historyWindowSize)
+            val summary = historySummarizer.summarize(oldMessage)
+            if (summary != null) stateManager.applyHistorySummary(summary)
+        }
         val boundedHistory = stateManager.boundedHistory(fullHistory)
         tracer.logHistoryWindow(
             fullSize = fullHistory.size,
             windowSize = boundedHistory.size
         )
+
         //----------Step 6: LLM call
         orchestrator.sendChatMessageWithTools(
             message = userMessage,

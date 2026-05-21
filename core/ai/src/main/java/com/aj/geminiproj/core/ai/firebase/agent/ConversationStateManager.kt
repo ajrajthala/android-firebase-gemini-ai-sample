@@ -18,7 +18,7 @@ import com.aj.geminiproj.core.model.chat.MessageRole
  */
 class ConversationStateManager(
     private val contextBuilder: AgentContextBuilder,
-    private val historyWindowSize: Int = 10,
+    val historyWindowSize: Int = 10,
     private val summarizationThreshold: Int = 20,
 ) {
     companion object {
