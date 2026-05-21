@@ -1,6 +1,8 @@
-package com.aj.geminiproj.core.ai.firebase.agent
+package com.aj.geminiproj.core.ai.firebase.session
 
 import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.context.AgentContextBuilder
+import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomain
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.MessageRole
 

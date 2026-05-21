@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.ai.firebase.agent
+package com.aj.geminiproj.core.ai.firebase.resolver
 
 import android.util.Log
 

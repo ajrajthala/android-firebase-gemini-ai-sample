@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.ai.firebase.agent
+package com.aj.geminiproj.core.ai.firebase.session
 
 import android.util.Log
 import com.aj.geminiproj.core.model.chat.ChatMessage

@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.ai.firebase.agent
+package com.aj.geminiproj.core.ai.firebase.reliability
 
 import android.util.Log
 import com.google.firebase.ai.type.QuotaExceededException

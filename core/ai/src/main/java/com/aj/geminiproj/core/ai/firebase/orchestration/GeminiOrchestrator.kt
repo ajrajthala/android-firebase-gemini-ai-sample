@@ -1,9 +1,9 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
 import android.util.Log
-import com.aj.geminiproj.core.ai.firebase.agent.AgentTracer
-import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
-import com.aj.geminiproj.core.ai.firebase.agent.TurnTokenCounter
+import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
+import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomainRegistry
+import com.aj.geminiproj.core.ai.firebase.observability.TurnTokenCounter
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.model.chat.ChatMessage
@@ -26,9 +26,6 @@ import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import java.util.UUID
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 /**
 Orchestrates multi-turn conversations with Gemini including tool execution.

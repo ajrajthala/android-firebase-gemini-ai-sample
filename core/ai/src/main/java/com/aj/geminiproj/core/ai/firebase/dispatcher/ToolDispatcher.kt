@@ -1,7 +1,7 @@
 package com.aj.geminiproj.core.ai.firebase.dispatcher
 
 import android.util.Log
-import com.aj.geminiproj.core.ai.firebase.agent.SemanticDomainRegistry
+import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomainRegistry
 import com.aj.geminiproj.core.model.tool.ToolResult
 
 class ToolDispatcher(

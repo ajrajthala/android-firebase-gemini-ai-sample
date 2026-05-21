@@ -1,8 +1,8 @@
-package com.aj.geminiproj.core.ai.firebase.domain
+package com.aj.geminiproj.core.ai.firebase.data
 
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
