@@ -1,6 +1,7 @@
 package com.aj.geminiproj.features.chat.presentation
 
 import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 
 
 data class ChatUiState(
@@ -15,7 +16,8 @@ data class ChatUiState(
     val activeToolDisplay: String? = null, // For showing tool execution status in the UI
     val showPermissionRationale: Boolean = false,
 
-     val currentTurnToolSteps : List<String> = emptyList()
+    val currentTurnToolSteps: List<String> = emptyList(),
+    val lastTurnTokens: ChatStreamEvent.TokenUsageRecorded? = null
 ) {
     val canSendMessage: Boolean
         get() = !isLoading && !isStreaming

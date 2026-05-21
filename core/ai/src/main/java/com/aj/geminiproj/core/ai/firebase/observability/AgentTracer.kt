@@ -4,21 +4,27 @@ import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomain
 import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.core.model.tool.ToolResult
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.update
 
+@OptIn(ExperimentalAtomicApi::class)
 class AgentTracer {
     companion object {
         private const val TAG = "AgentTracer"
         private const val SEPARATOR = "========================================="
     }
 
-    private var turnStartMs: Long = 0
-    private var currentTurnId: String = ""
+
+    private val turnStartMs= AtomicLong(0L)
+    private val currentTurnId = AtomicReference("")
 
     // ------------- Turn lifecycle -----------------
 
     fun beginTurn(turnId: String, userMessage: String) {
-        turnStartMs = System.currentTimeMillis()
-        currentTurnId = turnId
+        turnStartMs.update { System.currentTimeMillis()}
+        currentTurnId.update { turnId}
         Log.i(TAG, SEPARATOR)
         Log.i(TAG, "TURN START id=$turnId")
         Log.i(TAG, "USER: $userMessage")
@@ -102,7 +108,7 @@ class AgentTracer {
 
     //-------------- Turn completion -----------------
     fun logTurnCompletion(aiResponse: String, tokenSummary: TokenSummary? = null) {
-        val totalMs = System.currentTimeMillis() - turnStartMs
+        val totalMs = System.currentTimeMillis() - turnStartMs.load()
         Log.i(TAG, "  AI_RESPONSE: ${aiResponse.take(150).replace("\n", " ")}")
         tokenSummary?.let {
             logTokenSummary(it)
@@ -112,8 +118,8 @@ class AgentTracer {
     }
 
     fun logTurnError(error: Throwable) {
-        val totalMs = System.currentTimeMillis() - turnStartMs
-        Log.e(TAG, "  TURN_ERROR: ${error.message ?: "Unknown error"} total=${totalMs}ms")
+        val totalMs = System.currentTimeMillis() - turnStartMs.load()
+        Log.e(TAG, "  TURN_ERROR: id=$currentTurnId ${error.message ?: "Unknown error"} total=${totalMs}ms")
         Log.e(TAG, SEPARATOR)
     }
 
@@ -131,4 +137,9 @@ class AgentTracer {
         )
     }
 
+    fun logGuardrailBlocked(reason: String) {
+        val totalMs = System.currentTimeMillis() - turnStartMs.load()
+        Log.w(TAG, "   GUARDRAIL_BLOCKED: $reason total=${totalMs}ms")
+        Log.w(TAG, SEPARATOR)
+    }
 }

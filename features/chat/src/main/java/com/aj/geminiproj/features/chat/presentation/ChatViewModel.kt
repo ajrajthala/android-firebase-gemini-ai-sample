@@ -17,6 +17,7 @@ import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithAgentUseCase
+import com.aj.geminiproj.features.chat.presentation.ChatUiEffect.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ class ChatViewModel(
     private val sendMessageWithAgentUseCase: SendMessageWithAgentUseCase,
     private val resetConversationUseCase: ResetConversationUseCase
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ChatUiState(conversationId = conversationId))
+    private val _uiState = MutableStateFlow(ChatUiState(conversationId = conversationId,))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     private val _inputText = MutableStateFlow("")
@@ -79,7 +80,7 @@ class ChatViewModel(
     fun loadConversation() {
         viewModelScope.launch {
             if (conversationId == "new") {
-                _uiState.update { ChatUiState(conversationId = conversationId) }
+                _uiState.update { ChatUiState(conversationId = conversationId,) }
                 return@launch
             }
             _uiState.update { it.copy(isLoading = true, error = null) }
@@ -254,7 +255,7 @@ class ChatViewModel(
                     )
                 }
                 viewModelScope.launch {
-                    _uiEffect.send(ChatUiEffect.ShowError(event.errorMessage))
+                    _uiEffect.send(ShowError(event.errorMessage))
                 }
             }
 
@@ -300,8 +301,12 @@ class ChatViewModel(
                     )
                 }
                 viewModelScope.launch {
-                    _uiEffect.send(ChatUiEffect.ShowError(event.errorMessage))
+                    _uiEffect.send(ShowError(event.errorMessage))
                 }
+            }
+
+            is ChatStreamEvent.TokenUsageRecorded -> {
+                _uiState.update { it.copy(lastTurnTokens = event) }
             }
         }
     }

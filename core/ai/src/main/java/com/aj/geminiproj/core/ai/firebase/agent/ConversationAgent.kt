@@ -15,6 +15,7 @@ import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
+import java.util.concurrent.TransferQueue
 
 /**
  * Owns the full agent turn pipeline from user message to llm response stream
@@ -40,6 +41,7 @@ class ConversationAgent(
         // Input guardrail
         when (val guardrail = guardrail.check(userMessage)) {
             is InputGuardrail.GuardrailResult.Blocked -> {
+                tracer.logGuardrailBlocked(guardrail.reason)
                 emit(
                     ChatStreamEvent.StreamError(
                         throwable = SecurityException(guardrail.reason),
@@ -86,6 +88,7 @@ class ConversationAgent(
 
         //----Step 2: Build system prompt -------------
         val systemPrompt = stateManager.buildSystemPrompt()
+        tracer.logSystemPrompt(systemPrompt)
 
         //----Step 3: Few-shot primers
         val fewShotPrimer = stateManager.consumeFewShotPrimers()
@@ -96,6 +99,7 @@ class ConversationAgent(
 
         //-----Step 4: active tools for this session only
         val activeTools = domainRegistry.getToolsForDomains(stateManager.getActiveDomains())
+        tracer.logToolsLoaded(activeTools)
 
         //-----Step 5: Bounded history (Sliding window)
         if (stateManager.shouldSummarize(fullHistory)) {

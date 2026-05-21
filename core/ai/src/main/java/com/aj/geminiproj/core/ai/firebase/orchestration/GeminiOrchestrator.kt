@@ -87,10 +87,6 @@ class GeminiOrchestrator(
         onHistoryUpdated: (List<Content>) -> Unit,
         turnId: String
     ): Flow<ChatStreamEvent> = flow {
-        tracer.beginTurn(turnId, userPrompt)
-        tracer.logSystemPrompt(systemPrompt)
-        tracer.logToolsLoaded(tools)
-
         val tokenCounter = TurnTokenCounter()
         val model =
             if (tools.isNotEmpty()) {
@@ -176,6 +172,13 @@ class GeminiOrchestrator(
 
                 if (functionCallsThisRound.isEmpty()) {
                     tracer.logTurnCompletion(fullText, tokenCounter.summary())
+                    val summary = tokenCounter.summary()
+                    emit(ChatStreamEvent.TokenUsageRecorded(
+                        promptTokens = summary.promptTokens,
+                        candidateTokens = summary.promptTokens,
+                        totalTokens = summary.totalTokens,
+                        toolRounds = summary.toolRounds
+                    ))
                     // No tools called, turn is complete
                     val modelContent = content(role = "model") {
                         modelTextParts.forEach { text(it.text) }

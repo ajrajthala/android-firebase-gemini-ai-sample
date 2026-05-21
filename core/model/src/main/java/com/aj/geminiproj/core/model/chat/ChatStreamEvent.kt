@@ -18,4 +18,11 @@ sealed class ChatStreamEvent {
         val throwable: Throwable,
         val errorMessage: String = "Something went wrong. Please try again."
     ) : ChatStreamEvent()
+
+    data class TokenUsageRecorded(
+        val promptTokens: Int,
+        val candidateTokens: Int,
+        val totalTokens: Int,
+        val toolRounds: Int
+    ) : ChatStreamEvent()
 }
