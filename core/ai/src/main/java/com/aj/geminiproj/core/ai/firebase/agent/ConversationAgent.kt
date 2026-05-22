@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.agent
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.ai.firebase.reliability.RetryHandler
@@ -15,7 +15,6 @@ import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
-import java.util.concurrent.TransferQueue
 
 /**
  * Owns the full agent turn pipeline from user message to llm response stream
@@ -28,7 +27,9 @@ class ConversationAgent(
     private val tracer: AgentTracer,
     private val orchestrator: GeminiOrchestrator,
     private val guardrail: InputGuardrail,
-    private val historySummarizer: HistorySummarizer
+    private val historySummarizer: HistorySummarizer,
+    private val retryHandler: RetryHandler,
+    private val logger: Logger
 ) {
 
     fun processMessage(
@@ -64,11 +65,11 @@ class ConversationAgent(
         if (needsResolution) {
             val resolutionStartTime = System.currentTimeMillis()
             val resolvedDomains = try {
-                RetryHandler.withRetry(operationName = "DomainResolver", maxAttempts = 2) {
+                retryHandler.withRetry(operationName = "DomainResolver", maxAttempts = 2) {
                     domainResolver.resolve(userMessage)
                 }
             } catch (e: Exception) {
-                Log.w("ConversationAgent", "Domain resolver failed, using keyword fallback")
+                logger.w("ConversationAgent", "Domain resolver failed, using keyword fallback")
                 domainResolverFallback.resolve(userMessage)
             }
             stateManager.setActiveDomains(resolvedDomains)

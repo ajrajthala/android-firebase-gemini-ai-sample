@@ -1,12 +1,13 @@
 package com.aj.geminiproj.core.ai.firebase.session
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 
 class HistorySummarizer(
+    private val logger: Logger,
     private val modelName: String = "gemini-3-flash-preview"
 ) {
     companion object {
@@ -35,10 +36,10 @@ class HistorySummarizer(
                 .generativeModel(modelName)
             val response = model.generateContent(prompt)
             val summary = response.text?.trim()
-            Log.i(TAG, "Summary generated (${summary?.length} chars")
+            logger.i(TAG, "Summary generated (${summary?.length} chars")
             summary
         } catch (e: Exception) {
-            Log.e(TAG, "Summarization failed: ${e.message}")
+            logger.e(TAG, "Summarization failed: ${e.message}")
             null
         }
     }

@@ -1,21 +1,24 @@
 package com.aj.geminiproj.core.ai.firebase.resolver
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.model.tool.Tool
-import org.koin.core.component.KoinComponent
 
-class SemanticDomainRegistry : KoinComponent {
+class SemanticDomainRegistry(
+    private val allTools: List<Tool>,
+    private val logger: Logger,
+) {
+    companion object {
+        private const val TAG = "SemanticDomainRegistry"
+    }
 
-    private val allTools: List<Tool> by lazy {
-        getKoin().getAll<Tool>().also {
-            Log.i(
-                "SemanticDomainRegistry",
-                "allTools loaded: ${it.size} -> ${it.map { t -> t.definition.functionName }}"
+    val domains: List<SemanticDomain> by lazy {
+        buildDomains().also {
+            logger.i(
+                TAG,
+                "allTools loaded: ${allTools.size} ->${allTools.map { t -> t.definition.functionName }}"
             )
         }
     }
-
-    val domains: List<SemanticDomain> by lazy { buildDomains() }
 
     fun getToolsForDomains(activeDomains: List<SemanticDomain>): List<Tool> {
         val domainIds = activeDomains.map { it.id }.toSet()

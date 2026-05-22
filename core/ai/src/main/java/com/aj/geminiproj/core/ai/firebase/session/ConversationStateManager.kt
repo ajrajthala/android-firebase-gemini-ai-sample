@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.session
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.ai.firebase.context.AgentContextBuilder
 import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomain
 import com.aj.geminiproj.core.model.chat.ChatMessage
@@ -20,6 +20,7 @@ import com.aj.geminiproj.core.model.chat.MessageRole
  */
 class ConversationStateManager(
     private val contextBuilder: AgentContextBuilder,
+    private val logger: Logger,
     val historyWindowSize: Int = 10,
     private val summarizationThreshold: Int = 20,
 ) {
@@ -38,7 +39,7 @@ class ConversationStateManager(
         if (changed) {
             activeDomains = domains
             systemPromptCache = null
-            Log.i(TAG, "Active domains updated: ${domains.map { it.id }}")
+            logger.i(TAG, "Active domains updated: ${domains.map { it.id }}")
         }
     }
 
@@ -71,7 +72,7 @@ class ConversationStateManager(
 
         val overlap = messageWords.intersect(domainWords)
         val isShift = overlap.isEmpty() && messageWords.size > 2
-        if (isShift) Log.i(TAG, "Topic shift detected for: $userMessage")
+        if (isShift) logger.i(TAG, "Topic shift detected for: $userMessage")
         return isShift
     }
 
@@ -86,7 +87,7 @@ class ConversationStateManager(
         val newDomains = domainsWithTools.filter { !introducedDomains.contains(it.id) }
         if (newDomains.isEmpty()) return null
         introducedDomains.addAll(newDomains.map { it.id })
-        Log.i(TAG, "Injecting few-shot primers for: ${newDomains.map { it.id }}")
+        logger.i(TAG, "Injecting few-shot primers for: ${newDomains.map { it.id }}")
         return contextBuilder.buildFewShotPrimer(newDomains)
     }
 
@@ -112,7 +113,7 @@ class ConversationStateManager(
 
     fun applyHistorySummary(summary: String){
         historySummary = summary
-        Log.i(TAG, "History summary applied.")
+        logger.i(TAG, "History summary applied.")
     }
 
     fun reset(){
@@ -121,7 +122,7 @@ class ConversationStateManager(
         systemPromptCache = null
         historySummary = null
         isFirstTurn = true
-        Log.i(TAG, "Session reset.")
+        logger.i(TAG, "Session reset.")
     }
 
 }

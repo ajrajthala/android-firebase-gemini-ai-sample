@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.safety
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 
 /**
  * Guard against prompt injection and adversarial inputs
@@ -10,7 +10,9 @@ import android.util.Log
  * Hijack tool execution
  * indirect injection
  */
-class InputGuardrail {
+class InputGuardrail(
+    private val logger: Logger
+) {
     companion object {
         private const val TAG = "InputGuardrail"
 
@@ -65,28 +67,28 @@ class InputGuardrail {
         }
 
         if (userInput.length > MAX_INPUT_LENGTH) {
-            Log.w(TAG, "Input blocked: exceeds max length(${userInput.length})")
+            logger.w(TAG, "Input blocked: exceeds max length(${userInput.length})")
             return GuardrailResult.Blocked("Input too long (max $MAX_INPUT_LENGTH characters")
         }
 
         val userInputLowercase = userInput.lowercase()
         SYSTEM_OVERRIDE_PATTERNS.forEach { pattern ->
             if (userInputLowercase.contains(pattern)) {
-                Log.w(TAG, "Input blocked: system_override pattern='$pattern'")
+                logger.w(TAG, "Input blocked: system_override pattern='$pattern'")
                 return GuardrailResult.Blocked("Potential prompt injection detected")
             }
         }
 
         TOOL_INJECTION_PATTERNS.forEach { pattern ->
             if (userInputLowercase.contains(pattern)) {
-                Log.w(TAG, "Input blocked: tool_injection pattern='$pattern'")
+                logger.w(TAG, "Input blocked: tool_injection pattern='$pattern'")
                 return GuardrailResult.Blocked("Potential tool injection detected")
             }
         }
 
         INDIRECT_INJECTION_MARKERS.forEach { marker ->
             if (userInputLowercase.contains(marker)) {
-                Log.w(TAG, "Input blocked: indirection_injection_marker pattern='$marker'")
+                logger.w(TAG, "Input blocked: indirection_injection_marker pattern='$marker'")
                 return GuardrailResult.Blocked("Suspicious input structure detected")
             }
         }

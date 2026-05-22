@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.resolver
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -13,6 +13,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 class SemanticDomainResolver(
     private val registry: SemanticDomainRegistry,
+    private val logger: Logger,
     private val confidenceThreshold: Double = .60,
     private val modelName: String = "gemini-3-flash-preview"
 ) {
@@ -34,12 +35,12 @@ class SemanticDomainResolver(
                 score >= confidenceThreshold
             }
 
-            Log.i(TAG, "Domain scores: $scores")
-            Log.i(TAG, "Active domains: ${active.map { it.id }}")
+            logger.i(TAG, "Domain scores: $scores")
+            logger.i(TAG, "Active domains: ${active.map { it.id }}")
             active
         } catch (e: QuotaExceededException) {
             e.printStackTrace()
-            Log.w(TAG, "Quota exceeded during resolution - loading all domains as fallback")
+            logger.w(TAG, "Quota exceeded during resolution - loading all domains as fallback")
             domains
         } catch (e: Exception) {
             e.printStackTrace()
@@ -98,7 +99,7 @@ class SemanticDomainResolver(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Log.e(TAG, "Failed to parse domain scores from: $cleaned")
+            logger.e(TAG, "Failed to parse domain scores from: $cleaned")
             emptyMap()
         }
     }

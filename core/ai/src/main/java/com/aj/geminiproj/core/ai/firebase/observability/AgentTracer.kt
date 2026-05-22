@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.observability
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomain
 import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.core.model.tool.ToolResult
@@ -10,7 +10,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.update
 
 @OptIn(ExperimentalAtomicApi::class)
-class AgentTracer {
+class AgentTracer(private val logger: Logger) {
     companion object {
         private const val TAG = "AgentTracer"
         private const val SEPARATOR = "========================================="
@@ -25,9 +25,9 @@ class AgentTracer {
     fun beginTurn(turnId: String, userMessage: String) {
         turnStartMs.update { System.currentTimeMillis()}
         currentTurnId.update { turnId}
-        Log.i(TAG, SEPARATOR)
-        Log.i(TAG, "TURN START id=$turnId")
-        Log.i(TAG, "USER: $userMessage")
+        logger.i(TAG, SEPARATOR)
+        logger.i(TAG, "TURN START id=$turnId")
+        logger.i(TAG, "USER: $userMessage")
     }
 
     fun logDomainResolution(
@@ -36,45 +36,45 @@ class AgentTracer {
         wasSkipped: Boolean
     ) {
         if (wasSkipped) {
-            Log.i(TAG, "  DOMAINS: [cached] ${domains.map { it.id }} (skipped resolver)")
+            logger.i(TAG, "  DOMAINS: [cached] ${domains.map { it.id }} (skipped resolver)")
         } else {
-            Log.i(TAG, "  DOMAINS: resolved=${domains.map { it.id }} latency=${resolutionMs}ms")
+            logger.i(TAG, "  DOMAINS: resolved=${domains.map { it.id }} latency=${resolutionMs}ms")
         }
 
         if (domains.isEmpty()) {
-            Log.i(TAG, "  No domains resolved - will answer without tools")
+            logger.i(TAG, "  No domains resolved - will answer without tools")
         }
     }
 
     fun logSystemPrompt(systemPrompt: String) {
         val preview = systemPrompt.take(200).replace("\n", " ")
-        Log.d(TAG, "  SYSTEM_PROMPT: $preview...")
+        logger.d(TAG, "  SYSTEM_PROMPT: $preview...")
     }
 
     fun logToolsLoaded(tools: List<Tool>) {
         if (tools.isEmpty()) {
-            Log.w(TAG, "  TOOLS LOADED: none - check domain resolution and function name mapping")
+            logger.w(TAG, "  TOOLS LOADED: none - check domain resolution and function name mapping")
         } else {
-            Log.i(TAG, "  TOOLS LOADED: ${tools.map { it.definition.functionName }}")
+            logger.i(TAG, "  TOOLS LOADED: ${tools.map { it.definition.functionName }}")
         }
     }
 
     fun logFewShotInjection(injected: Boolean, domains: List<String>) {
         if (injected) {
-            Log.i(TAG, "  FEW_SHOT: injected for $domains")
+            logger.i(TAG, "  FEW_SHOT: injected for $domains")
         } else {
-            Log.d(TAG, "  FEW_SHOT: skipped (already in history)")
+            logger.d(TAG, "  FEW_SHOT: skipped (already in history)")
         }
     }
 
     fun logHistoryWindow(fullSize: Int, windowSize: Int) {
-        Log.d(TAG, "  HISTORY: full=$fullSize window=$windowSize")
+        logger.d(TAG, "  HISTORY: full=$fullSize window=$windowSize")
     }
 
     //----------- Tool execution ---------------------
     fun logToolCall(functionName: String, args: Map<String, Any>) {
-        Log.i(TAG, "  TOOL_CALL: $functionName")
-        args.forEach { (k, v) -> Log.i(TAG, "     args $k = $v") }
+        logger.i(TAG, "  TOOL_CALL: $functionName")
+        args.forEach { (k, v) -> logger.i(TAG, "     args $k = $v") }
     }
 
     fun logToolResult(
@@ -84,24 +84,24 @@ class AgentTracer {
     ) {
         when (result) {
             is ToolResult.Error -> {
-                Log.w(TAG, "  TOOL_RESULT: $functionName ERROR latency=${latencyMs}ms")
-                Log.w(TAG, "  message: ${result.message} retryable=${result.isRetryable}")
+                logger.w(TAG, "  TOOL_RESULT: $functionName ERROR latency=${latencyMs}ms")
+                logger.w(TAG, "  message: ${result.message} retryable=${result.isRetryable}")
             }
 
             is ToolResult.NeedsConfirmation -> {
-                Log.w(TAG, "  TOOL_RESULT: $functionName NEED_CONFIRMATION latency=${latencyMs}ms")
-                Log.w(TAG, "  options: ${result.options}")
+                logger.w(TAG, "  TOOL_RESULT: $functionName NEED_CONFIRMATION latency=${latencyMs}ms")
+                logger.w(TAG, "  options: ${result.options}")
             }
 
             is ToolResult.PermissionDenied -> {
-                Log.w(TAG, "  TOOL_RESULT: $functionName PERMISSION_DENIED latency=${latencyMs}ms")
-                Log.w(TAG, "  message: ${result.permission}")
+                logger.w(TAG, "  TOOL_RESULT: $functionName PERMISSION_DENIED latency=${latencyMs}ms")
+                logger.w(TAG, "  message: ${result.permission}")
 
             }
 
             is ToolResult.Success -> {
-                Log.i(TAG, "  TOOL_RESULT: $functionName SUCCESS latency=${latencyMs}ms")
-                result.data.forEach { (k, v) -> Log.d(TAG, "    $k-$v") }
+                logger.i(TAG, "  TOOL_RESULT: $functionName SUCCESS latency=${latencyMs}ms")
+                result.data.forEach { (k, v) -> logger.d(TAG, "    $k-$v") }
             }
         }
     }
@@ -109,27 +109,27 @@ class AgentTracer {
     //-------------- Turn completion -----------------
     fun logTurnCompletion(aiResponse: String, tokenSummary: TokenSummary? = null) {
         val totalMs = System.currentTimeMillis() - turnStartMs.load()
-        Log.i(TAG, "  AI_RESPONSE: ${aiResponse.take(150).replace("\n", " ")}")
+        logger.i(TAG, "  AI_RESPONSE: ${aiResponse.take(150).replace("\n", " ")}")
         tokenSummary?.let {
             logTokenSummary(it)
         }
-        Log.i(TAG, "  TURN END id=$currentTurnId total=${totalMs}ms")
-        Log.i(TAG, SEPARATOR)
+        logger.i(TAG, "  TURN END id=$currentTurnId total=${totalMs}ms")
+        logger.i(TAG, SEPARATOR)
     }
 
     fun logTurnError(error: Throwable) {
         val totalMs = System.currentTimeMillis() - turnStartMs.load()
-        Log.e(TAG, "  TURN_ERROR: id=$currentTurnId ${error.message ?: "Unknown error"} total=${totalMs}ms")
-        Log.e(TAG, SEPARATOR)
+        logger.e(TAG, "  TURN_ERROR: id=$currentTurnId ${error.message ?: "Unknown error"} total=${totalMs}ms")
+        logger.e(TAG, SEPARATOR)
     }
 
     fun logTopicShift(detected: Boolean, message: String) {
-        if (detected) Log.i(TAG, "  TOPIC_SHIFT detected for: $message")
+        if (detected) logger.i(TAG, "  TOPIC_SHIFT detected for: $message")
     }
 
     //---------------- Token Counter
     fun logTokenSummary(summary: TokenSummary) {
-        Log.i(
+        logger.i(
             TAG, "   TOKENS: prompt=${summary.promptTokens} " +
                     "candidates=${summary.candidateTokens} " +
                     "total=${summary.totalTokens} " +
@@ -139,7 +139,7 @@ class AgentTracer {
 
     fun logGuardrailBlocked(reason: String) {
         val totalMs = System.currentTimeMillis() - turnStartMs.load()
-        Log.w(TAG, "   GUARDRAIL_BLOCKED: $reason total=${totalMs}ms")
-        Log.w(TAG, SEPARATOR)
+        logger.w(TAG, "   GUARDRAIL_BLOCKED: $reason total=${totalMs}ms")
+        logger.w(TAG, SEPARATOR)
     }
 }

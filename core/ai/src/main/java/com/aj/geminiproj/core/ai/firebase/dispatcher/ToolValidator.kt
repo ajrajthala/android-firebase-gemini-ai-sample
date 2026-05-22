@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.dispatcher
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.model.tool.ParameterType
 import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,7 +14,7 @@ import kotlin.math.floor
  * to prevent malformed calls
  *
  */
-class ToolValidator {
+class ToolValidator(private val logger: Logger) {
     companion object {
         private const val TAG = "ToolValidator"
     }
@@ -42,7 +42,7 @@ class ToolValidator {
             val paramDef = definition.parameters.find { it.name == argName }
             if (paramDef == null) {
                 //Unknown parameter type - warn but do not block as LLM may send extra fields
-                Log.w(TAG, "Unknown parameter '${argName}' for tool '${definition.functionName}'")
+                logger.w(TAG, "Unknown parameter '${argName}' for tool '${definition.functionName}'")
             } else {
                 val typeError = checkType(argName, argValue, paramDef.type)
                 if (typeError != null) violations += typeError
@@ -52,7 +52,7 @@ class ToolValidator {
         return if (violations.isEmpty()) {
             ValidationResult.Valid
         } else {
-            Log.w(TAG, "Validation failed for '${definition.functionName}':$violations")
+            logger.w(TAG, "Validation failed for '${definition.functionName}':$violations")
             ValidationResult.Invalid(violations)
         }
     }

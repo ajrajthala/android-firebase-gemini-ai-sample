@@ -1,9 +1,10 @@
 package com.aj.geminiproj.core.ai.firebase.resolver
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 
 class DomainResolverFallback(
-    private val registry: SemanticDomainRegistry
+    private val registry: SemanticDomainRegistry,
+    private val logger: Logger
 ) {
     companion object {
         private const val TAG = "DomainResolverFallback"
@@ -34,10 +35,10 @@ class DomainResolverFallback(
         }
 
         return if (matched.isNotEmpty()) {
-            Log.i(TAG, "Keyword fallback matched: ${matched.map { it.id }}")
+            logger.i(TAG, "Keyword fallback matched: ${matched.map { it.id }}")
             matched
         } else {
-            Log.w(TAG, "No keyword match found - returning all domains as safe fallback")
+            logger.w(TAG, "No keyword match found - returning all domains as safe fallback")
             domains
         }
     }

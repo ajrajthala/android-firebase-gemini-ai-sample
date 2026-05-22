@@ -1,6 +1,5 @@
 package com.aj.geminiproj.core.ai.firebase.dispatcher
 
-import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomainRegistry
 import com.aj.geminiproj.core.model.tool.ToolResult
 
@@ -8,10 +7,6 @@ class ToolDispatcher(
     private val registry: SemanticDomainRegistry,
     private val validator: ToolValidator
 ) {
-    companion object {
-        private const val TAG = "ToolDispatcher"
-    }
-
     suspend fun dispatch(functionName: String, args: Map<String, Any>): ToolResult {
         val tool = registry.getToolByName(functionName)
             ?: return ToolResult.Error("Tool not found: $functionName", isRetryable = false)
@@ -19,7 +14,6 @@ class ToolDispatcher(
         when (val validation = validator.validate(tool, args)) {
             is ToolValidator.ValidationResult.Invalid -> {
                 val reason = validation.violations.joinToString("; ")
-                Log.w(TAG, "Schema validation failed for $functionName: $reason")
                 return ToolResult.Error(
                     message = "Invalid tool arguments: $reason",
                     isRetryable = false

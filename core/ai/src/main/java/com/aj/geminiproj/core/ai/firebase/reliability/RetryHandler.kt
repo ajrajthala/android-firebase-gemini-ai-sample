@@ -1,6 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.reliability
 
-import android.util.Log
+import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.google.firebase.ai.type.QuotaExceededException
 import kotlinx.coroutines.delay
 
@@ -8,8 +8,10 @@ import kotlinx.coroutines.delay
  * Retry Handler for errors like network timeouts, server errors,
  * Non retryable: QuotaExceededException, SecurityException, IllegalArgumentException
  */
-object RetryHandler {
-    private const val TAG = "RetryHandler"
+class RetryHandler(private val logger: Logger) {
+    companion object{
+        private const val TAG = "RetryHandler"
+    }
 
     suspend fun <T> withRetry(
         operationName: String = "operation",
@@ -26,7 +28,7 @@ object RetryHandler {
                 return block()
             } catch (e: Exception) {
                 if (!isRetryable(e)) {
-                    Log.w(
+                    logger.w(
                         TAG,
                         "[$operationName] Non-retryable error on attempt ${attempt + 1}: ${e.message}"
                     )
@@ -35,7 +37,7 @@ object RetryHandler {
                 lastException = e
                 if (attempt < maxAttempts + 1) {
                     val jitter = (0..jitterMs).random()
-                    Log.w(
+                    logger.w(
                         TAG,
                         "[$operationName] Attempt ${attempt + 1} failed: ${e.message}. Retryin in ${delayMs + jitter}ms..."
                     )
@@ -44,7 +46,7 @@ object RetryHandler {
                 }
             }
         }
-        Log.e(TAG, "[$operationName] All $maxAttempts attempts failed.")
+        logger.e(TAG, "[$operationName] All $maxAttempts attempts failed.")
         throw lastException!!
     }
 

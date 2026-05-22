@@ -13,8 +13,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
-import org.json.JSONObject
 import com.google.firebase.ai.type.Tool as FirebaseTool
 
 class FirebaseToolMapper {

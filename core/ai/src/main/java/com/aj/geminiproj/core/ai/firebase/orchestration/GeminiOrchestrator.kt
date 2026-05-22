@@ -1,11 +1,10 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
-import android.util.Log
-import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
-import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomainRegistry
-import com.aj.geminiproj.core.ai.firebase.observability.TurnTokenCounter
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
+import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
+import com.aj.geminiproj.core.ai.firebase.observability.TurnTokenCounter
+import com.aj.geminiproj.core.ai.firebase.resolver.SemanticDomainRegistry
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent.ToolCompleted
@@ -130,7 +129,7 @@ class GeminiOrchestrator(
                         chunk.usageMetadata?.let { lastUsageMetadata = it }
                         val candidate = chunk.candidates.firstOrNull()
                         if (candidate?.finishReason != null && candidate.finishReason != com.google.firebase.ai.type.FinishReason.STOP) {
-                            Log.w(TAG, "Streaming stopped with reason: ${candidate.finishReason}")
+                            tracer.logTurnError(Throwable("Streaming stopped with reason: ${candidate.finishReason}"))
                         }
 
                         candidate?.content?.parts?.forEach { part ->
@@ -259,7 +258,7 @@ class GeminiOrchestrator(
 
                 // Safety check to prevent infinite loops
                 if (toolRounds >= maxToolRounds) {
-                    Log.e(TAG, "Max tool rounds ($maxToolRounds) reached - aborting turn.")
+                    tracer.logTurnError(Throwable("Max tool rounds ($maxToolRounds) reached - aborting turn."))
                     emit(
                         ChatStreamEvent.StreamError(
                             throwable = Exception("Max tool execution rounds reached"),
