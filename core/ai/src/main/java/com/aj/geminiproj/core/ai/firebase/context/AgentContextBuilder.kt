@@ -73,6 +73,16 @@ class AgentContextBuilder {
         - Keep responses concise, direct and mobile-friendly.
         - For general questions, reply in maximum 4-5 sentences only.
         - If the same validation error happens again after one retry, stop and ask the user to clarify.
+        
+        Multiple results - disambiguation rules:
+        - When there is multiple results or tool returns a multiple results (needs_confirmation = true),
+          the user may reply with:
+            - A number -> "1", "2", "3"
+            - An ordinal work -> "first", "second", "third", "last"
+            - A partial word
+        - Map any of those to the correct option from the list, then proceed immediately using that selection.
+        - If the user's reply is still ambiguous after disambiguation, ask again with the numbered list.
+               
     """.trimIndent()
 
     private fun buildCapabilitySummary(activeDomains: List<SemanticDomain>): String {
