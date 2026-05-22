@@ -1,5 +1,7 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
+import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
+import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
@@ -52,8 +54,8 @@ class GeminiOrchestrator(
     private val dispatcher: ToolDispatcher,
     private val mapper: FirebaseToolMapper,
     private val tracer: AgentTracer,
+    private val modelFactory: GenerativeModelFactory,
     private val maxToolRounds: Int = 10,
-    private val modelName: String = "gemini-2.5-flash"
 ) {
 
     companion object {
@@ -90,22 +92,9 @@ class GeminiOrchestrator(
         val model =
             if (tools.isNotEmpty()) {
                 val firebaseTool = mapper.toFirebaseTool(tools)
-                Firebase.ai().generativeModel(
-                    modelName = modelName,
-                    tools = listOf(firebaseTool),
-                    systemInstruction = content { text(systemPrompt) },
-                    safetySettings = listOf(
-                        SafetySetting(HarmCategory.DANGEROUS_CONTENT, HarmBlockThreshold.ONLY_HIGH),
-                        SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.ONLY_HIGH),
-                        SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.ONLY_HIGH),
-                        SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, HarmBlockThreshold.ONLY_HIGH)
-                    )
-                )
+                modelFactory.createWithTools(GEMINI_MODEL, systemPrompt, firebaseTool)
             } else {
-                Firebase.ai().generativeModel(
-                    modelName = modelName,
-                    systemInstruction = content { text(systemPrompt) }
-                )
+                modelFactory.createWithSystemPrompt(GEMINI_MODEL, systemPrompt)
             }
         //
         val turnHistory = history.toMutableList()
@@ -172,12 +161,14 @@ class GeminiOrchestrator(
                 if (functionCallsThisRound.isEmpty()) {
                     tracer.logTurnCompletion(fullText, tokenCounter.summary())
                     val summary = tokenCounter.summary()
-                    emit(ChatStreamEvent.TokenUsageRecorded(
-                        promptTokens = summary.promptTokens,
-                        candidateTokens = summary.promptTokens,
-                        totalTokens = summary.totalTokens,
-                        toolRounds = summary.toolRounds
-                    ))
+                    emit(
+                        ChatStreamEvent.TokenUsageRecorded(
+                            promptTokens = summary.promptTokens,
+                            candidateTokens = summary.promptTokens,
+                            totalTokens = summary.totalTokens,
+                            toolRounds = summary.toolRounds
+                        )
+                    )
                     // No tools called, turn is complete
                     val modelContent = content(role = "model") {
                         modelTextParts.forEach { text(it.text) }

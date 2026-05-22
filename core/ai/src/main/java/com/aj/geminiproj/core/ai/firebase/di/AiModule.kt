@@ -1,6 +1,8 @@
 package com.aj.geminiproj.core.ai.firebase.di
 
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
+import com.aj.geminiproj.core.ai.firebase.FirebaseGenerativeModelFactory
+import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.agent.ConversationAgent
 import com.aj.geminiproj.core.ai.firebase.common.AndroidLogger
 import com.aj.geminiproj.core.ai.firebase.common.Logger
@@ -22,28 +24,34 @@ import com.aj.geminiproj.core.ai.firebase.session.HistorySummarizer
 import com.aj.geminiproj.core.model.tool.Tool
 import org.koin.dsl.module
 
+const val GEMINI_MODEL = "gemini-3-flash-preview"
 val aiModule = module {
-    single { FirebaseAiClient() }
-    single<AiRepository> { AiRepositoryImpl(get(), get()) }
+    // ---- Android bound --------------
+    single<GenerativeModelFactory> { FirebaseGenerativeModelFactory() }
     single<Logger> { AndroidLogger() }
 
+    // ---- Infrastructure ----------------
+    single { RetryHandler(logger = get()) }
     single { FirebaseToolMapper() }
+    single { FirebaseAiClient() }
+    single<AiRepository> { AiRepositoryImpl(get(), get()) }
 
+    // ---- Domain -----------
+    single { AgentContextBuilder() }
+    single { SemanticDomainRegistry(allTools = getKoin().getAll<Tool>(), logger = get()) }
+    single { SemanticDomainResolver(registry = get(), logger = get(), modelFactory = get()) }
+    single { DomainResolverFallback(registry = get(), logger = get()) }
+    single { ConversationStateManager(contextBuilder = get(), logger = get()) }
+    single { HistorySummarizer(modelFactory = get(), logger = get()) }
+    single { AgentTracer(logger = get()) }
+    single { InputGuardrail(logger = get()) }
     single { ToolValidator(logger = get()) }
     single { ToolDispatcher(registry = get(), validator = get()) }
 
-    single { AgentContextBuilder() }
-    single { SemanticDomainRegistry(allTools = getKoin().getAll<Tool>(), logger = get()) }
-    single { SemanticDomainResolver(registry = get(), logger = get()) }
-    single { DomainResolverFallback(registry = get(), logger = get()) }
-    single { ConversationStateManager(contextBuilder = get(), logger = get()) }
-    single { HistorySummarizer(logger = get()) }
-    single { AgentTracer(logger = get()) }
-    single { InputGuardrail(logger = get()) }
-    single { RetryHandler(logger = get()) }
-
+    // ---- Orchestration -------------
     single {
         GeminiOrchestrator(
+            modelFactory = get(),
             domainRegistry = get(),
             dispatcher = get(),
             mapper = get(),

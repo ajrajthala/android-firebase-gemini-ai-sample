@@ -1,14 +1,16 @@
 package com.aj.geminiproj.core.ai.firebase.session
 
+import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.common.Logger
+import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 
 class HistorySummarizer(
+    private val modelFactory: GenerativeModelFactory,
     private val logger: Logger,
-    private val modelName: String = "gemini-3-flash-preview"
 ) {
     companion object {
         private const val TAG = "HistorySummarizer"
@@ -31,9 +33,7 @@ class HistorySummarizer(
         """.trimIndent()
 
         return try {
-            val model = Firebase
-                .ai(backend = GenerativeBackend.googleAI())
-                .generativeModel(modelName)
+            val model = modelFactory.create(GEMINI_MODEL)
             val response = model.generateContent(prompt)
             val summary = response.text?.trim()
             logger.i(TAG, "Summary generated (${summary?.length} chars")

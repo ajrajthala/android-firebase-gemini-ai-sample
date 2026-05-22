@@ -1,6 +1,8 @@
 package com.aj.geminiproj.core.ai.firebase.resolver
 
+import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.common.Logger
+import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -13,9 +15,9 @@ import kotlinx.serialization.json.jsonPrimitive
 
 class SemanticDomainResolver(
     private val registry: SemanticDomainRegistry,
+    private val modelFactory: GenerativeModelFactory,
     private val logger: Logger,
     private val confidenceThreshold: Double = .60,
-    private val modelName: String = "gemini-3-flash-preview"
 ) {
     companion object {
         private const val TAG = "SemanticDomainResolver"
@@ -74,12 +76,7 @@ class SemanticDomainResolver(
             Format: {"DOMAIN_ID": score, ...}
         """.trimIndent()
 
-        val model = Firebase
-            .ai(backend = GenerativeBackend.googleAI())
-            .generativeModel(
-                modelName = modelName,
-                systemInstruction = content { text(systemPrompt) }
-            )
+        val model = modelFactory.createWithSystemPrompt(GEMINI_MODEL, systemPrompt)
 
         val response = model.generateContent(userMessage)
         return response.text.orEmpty().trim()
