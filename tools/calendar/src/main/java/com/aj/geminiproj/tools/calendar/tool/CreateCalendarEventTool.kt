@@ -47,7 +47,7 @@ class CreateCalendarEventTool(
             ?: return ToolResult.Error("Missing or invalid 'startTimeMs.'")
         val end = parameters.longParam("endTimeMs")
             ?: return ToolResult.Error("Missing or invalid 'endTimeMs.'")
-        if (end > start) return ToolResult.Error("'endTimeMs' must be greater than 'startTimeMs'")
+        if (end < start) return ToolResult.Error("'endTimeMs' must be greater than 'startTimeMs'")
 
         val request = CreateEventRequest(
             title = title,
