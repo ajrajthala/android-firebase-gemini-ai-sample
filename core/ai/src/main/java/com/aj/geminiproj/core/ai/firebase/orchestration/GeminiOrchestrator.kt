@@ -3,6 +3,8 @@ package com.aj.geminiproj.core.ai.firebase.orchestration
 import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
+import com.aj.geminiproj.core.ai.firebase.ingelligence.ParallelToolExecutor
+import com.aj.geminiproj.core.ai.firebase.ingelligence.ToolCall
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.observability.TurnTokenCounter
@@ -55,6 +57,7 @@ class GeminiOrchestrator(
     private val mapper: FirebaseToolMapper,
     private val tracer: AgentTracer,
     private val modelFactory: GenerativeModelFactory,
+    private val parallelToolExecutor: ParallelToolExecutor,
     private val maxToolRounds: Int = 10,
 ) {
 
@@ -187,12 +190,16 @@ class GeminiOrchestrator(
                 turnHistory.add(modelTurnContent)
 
                 // Execute all tools called this round
+                val toolCalls = functionCallsThisRound.map { (name, args) ->
+                    ToolCall(name, args)
+                }
+                val executionResults = parallelToolExecutor.executeAll(toolCalls)
                 val functionResponseParts = mutableListOf<FunctionResponsePart>()
-                functionCallsThisRound.forEach { (functionName, args) ->
-                    val toolStart = System.currentTimeMillis()
-                    val result = dispatcher.dispatch(functionName, args)
-                    val toolLatency = System.currentTimeMillis() - toolStart
-                    tracer.logToolResult(functionName, result, toolLatency)
+
+                executionResults.forEach { executionResult ->
+                    val functionName = executionResult.toolCall.toolName
+                    val result = executionResult.result
+                    tracer.logToolResult(functionName, result, executionResult.latencyMs)
                     when (result) {
                         is ToolResult.Success -> {
                             emit(
@@ -238,6 +245,7 @@ class GeminiOrchestrator(
                     }
                     // Feed result back to Gemini regardless of outcome so it can decide how to proceed (try again, skip tool, etc)
                     functionResponseParts.add(mapper.toFunctionResponsePart(functionName, result))
+
                 }
 
                 // Append all function responses as a single user turn
@@ -257,7 +265,6 @@ class GeminiOrchestrator(
                         )
                     )
                 }
-
             }
         } catch (e: Exception) {
             tracer.logTurnError(e)

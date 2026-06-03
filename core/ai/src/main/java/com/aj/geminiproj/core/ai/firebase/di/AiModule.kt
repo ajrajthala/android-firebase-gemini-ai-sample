@@ -11,6 +11,8 @@ import com.aj.geminiproj.core.ai.firebase.data.AiRepository
 import com.aj.geminiproj.core.ai.firebase.data.AiRepositoryImpl
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolValidator
+import com.aj.geminiproj.core.ai.firebase.ingelligence.ParallelToolExecutor
+import com.aj.geminiproj.core.ai.firebase.ingelligence.ToolResultCache
 import com.aj.geminiproj.core.ai.firebase.mapper.FirebaseToolMapper
 import com.aj.geminiproj.core.ai.firebase.observability.AgentTracer
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
@@ -47,6 +49,8 @@ val aiModule = module {
     single { InputGuardrail(logger = get()) }
     single { ToolValidator(logger = get()) }
     single { ToolDispatcher(registry = get(), validator = get()) }
+    single { ToolResultCache(logger = get()) }
+    single { ParallelToolExecutor(dispatcher = get(), cache = get(), logger = get()) }
 
     // ---- Orchestration -------------
     single {
@@ -56,6 +60,7 @@ val aiModule = module {
             dispatcher = get(),
             mapper = get(),
             tracer = get(),
+            parallelToolExecutor = get(),
         )
     }
 

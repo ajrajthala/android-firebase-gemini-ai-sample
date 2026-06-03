@@ -23,6 +23,7 @@ class ParallelToolExecutor(
     private val INVALIDATION_MAP = mapOf(
         "createCalendarEvent" to "getCalendarEvents"
     )
+
     /**
      * Execute multiple tool calls in parallel and cache results.
      *
@@ -38,7 +39,7 @@ class ParallelToolExecutor(
         jobs.awaitAll()
     }
 
-   private suspend fun executeSingle(toolCall: ToolCall): ExecutionResult {
+    private suspend fun executeSingle(toolCall: ToolCall): ExecutionResult {
         val isWrite = toolCall.toolName in WRITE_TOOLS
         val startMs = System.currentTimeMillis()
 
@@ -88,16 +89,16 @@ class ParallelToolExecutor(
         )
 
     }
-
-    data class ToolCall(
-        val toolName: String,
-        val args: Map<String, Any>
-    )
-
-    data class ExecutionResult(
-        val toolCall: ToolCall,
-        val result: ToolResult,
-        val latencyMs: Long,
-        val fromCache: Boolean
-    )
 }
+
+data class ToolCall(
+    val toolName: String,
+    val args: Map<String, Any>
+)
+
+data class ExecutionResult(
+    val toolCall: ToolCall,
+    val result: ToolResult,
+    val latencyMs: Long,
+    val fromCache: Boolean
+)
