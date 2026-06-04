@@ -1,8 +1,8 @@
 import com.aj.geminiproj.BuildConstants
+import com.aj.geminiproj.addCommonTestDependencies
 import com.aj.geminiproj.configureAndroidBuildTypes
 import com.aj.geminiproj.configureAndroidCommon
 import com.aj.geminiproj.configureAndroidCompose
-import com.aj.geminiproj.configureAndroidFlavors
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -31,6 +31,7 @@ class AndroidApplicationComposeConventionPlugin : Plugin<Project> {
                     testInstrumentationRunner = BuildConstants.TEST_INSTRUMENTATION_RUNNER
                 }
             }
+            addCommonTestDependencies()
         }
     }
 }
