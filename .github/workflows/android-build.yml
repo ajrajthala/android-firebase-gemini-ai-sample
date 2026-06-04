@@ -15,9 +15,10 @@ jobs:
 
     - name: Decode and create google-services.json from secret
       run: |
-        echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
-      env:
-        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        printf "%s" "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > app/google-services.json
+        # Verify the file was created and is valid JSON
+        test -f app/google-services.json && echo "✓ google-services.json created" || (echo "✗ Failed to create google-services.json"; exit 1)
+        cat app/google-services.json | head -c 100  # Show first 100 chars for debugging
 
     - name: Make gradlew executable
       run: chmod +x ./gradlew
