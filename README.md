@@ -1,5 +1,7 @@
 # GemChat
 
+Latest release: v1.0.0 — see `CHANGELOG.md` and `docs/release-notes/v1.0.0.md`
+
 A modern Android chat application powered by **Firebase AI** and **Gemini Flash**. This is a sample project demonstrating best practices in multi-modular Android development with Jetpack Compose, Kotlin Coroutines, and Firebase integration.
 
 > 📚 **Learning Project** | 🔓 **Open Source** | 🎯 **Production-Ready Architecture**
@@ -88,13 +90,13 @@ geminiproj/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/AjGeminiProj.git
+git clone https://github.com/ajrajthala/AjGeminiProj.git
 cd AjGeminiProj
 ```
 
 ### 2. Update Your Package Name
 
-The default package is `com.example.geminiproj.sample`. You need to rename it to your own:
+The default package is `com.aj.geminiproj`. You need to rename it to your own:
 
 1. In Android Studio: `Refactor` → `Rename` → Choose your new package name
 2. Update `build.gradle.kts` (app module) with your new package name
