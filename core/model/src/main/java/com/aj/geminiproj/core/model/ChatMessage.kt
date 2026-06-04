@@ -10,6 +10,7 @@ data class ChatMessage(
     val timeStamp: Long = System.currentTimeMillis(),
     val status: MessageStatus = MessageStatus.SENT,
     val metadata: MessageMetaData? = null,
+    val imageUri: String? = null
 )
 
 @Serializable
