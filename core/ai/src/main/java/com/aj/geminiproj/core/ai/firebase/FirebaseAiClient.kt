@@ -1,5 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase
 
+import android.graphics.Bitmap
 import com.aj.geminiproj.core.model.ChatMessage
 import com.aj.geminiproj.core.model.MessageRole
 import com.google.firebase.Firebase
@@ -46,5 +47,33 @@ class FirebaseAiClient(val modelName: String = "gemini-3-flash-preview") {
                 MessageRole.SYSTEM -> null // Firebase doesn't support system role
             }
         }
+    }
+
+    // ---------MultiModal (text + image)
+    suspend fun generateContentWithImage(
+        prompt: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): String {
+        val chat = generativeModel.startChat(history = history.toFirebaseChatHistory())
+        val inputContent = content {
+            image(bitmap)
+            if (prompt.isNotBlank()) text(prompt) else text("Describe this image")
+        }
+        val response = chat.sendMessage(inputContent)
+        return response.text ?: throw Exception("No response from AI")
+    }
+
+    fun generateContentWithImageStream(
+        prompt: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): Flow<String> {
+        val chat = generativeModel.startChat(history = history.toFirebaseChatHistory())
+        val inputContent = content {
+            image(bitmap)
+            if (prompt.isNotBlank()) text(prompt) else text("Describe this image")
+        }
+        return chat.sendMessageStream(inputContent).map { it.text ?: "" }
     }
 }

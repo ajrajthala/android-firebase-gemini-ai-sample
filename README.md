@@ -1,5 +1,7 @@
 # GemChat
 
+Latest release: v1.0.0 — see `CHANGELOG.md` and `docs/release-notes/v1.0.0.md`
+
 A modern Android chat application powered by **Firebase AI** and **Gemini Flash**. This is a sample project demonstrating best practices in multi-modular Android development with Jetpack Compose, Kotlin Coroutines, and Firebase integration.
 
 > 📚 **Learning Project** | 🔓 **Open Source** | 🎯 **Production-Ready Architecture**
@@ -17,15 +19,20 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 
 ### Screenshots
 
-| Chat Screen | Chat History | Tablet View |
+| Chat Screen | Chat History | Image Analysis |
 | :---: | :---: | :---: |
-| ![Chat Screen](docs/screenshots/chat_screen.png) | ![Chat History](docs/screenshots/chat_history.png) | ![Tablet View](docs/screenshots/tablet_view.png) |
+| ![Chat Screen](docs/screenshots/chat_screen.png) | ![Chat History](docs/screenshots/chat_history.png) | ![Image Analysis](docs/screenshots/image_analysis_screen.png) |
+
+#### Tablet View
+<p align="center">
+  <img src="docs/screenshots/tablet_view.png" alt="Tablet View" width="800"/>
+</p>
 
 ### Demo
 
-<p align="center">
-  <img src="docs/demo.gif" alt="App Demo" width="300"/>
-</p>
+| Text Chat | Image Analysis |
+| :---: | :---: |
+| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> |
 
 ## Tech Stack
 
@@ -89,7 +96,7 @@ cd AjGeminiProj
 
 ### 2. Update Your Package Name
 
-The default package is `com.example.geminiproj.sample`. You need to rename it to your own:
+The default package is `com.aj.geminiproj`. You need to rename it to your own:
 
 1. In Android Studio: `Refactor` → `Rename` → Choose your new package name
 2. Update `build.gradle.kts` (app module) with your new package name
