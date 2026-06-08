@@ -15,20 +15,18 @@ import com.aj.geminiproj.core.model.chat.ChatStreamEvent.ToolCompleted
 import com.aj.geminiproj.core.model.chat.MessageRole
 import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.core.model.tool.ToolResult
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
-import com.google.firebase.ai.type.HarmBlockThreshold
-import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.QuotaExceededException
-import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
 Orchestrates multi-turn conversations with Gemini including tool execution.
@@ -236,7 +234,7 @@ class GeminiOrchestrator(
                         is ToolResult.NeedsConfirmation -> {
                             // Treat as completed, Gemini should handle the clarification naturally via the FunctionResponsePart we feed back below.
                             emit(
-                                ChatStreamEvent.ToolCompleted(
+                                ToolCompleted(
                                     functionName = functionName,
                                     summary = result.message
                                 )
@@ -291,7 +289,20 @@ class GeminiOrchestrator(
             data.containsKey("displayName") -> "Found ${data["displayName"]} in contacts"
             data.containsKey("name") -> "Found ${data["name"]}"
             data.containsKey("eventId") -> "Event ${data["title"]} on ${data["date"]} at ${data["time"]} created"
-            data.containsKey("available") -> "The time slot on ${data["date"]} at ${data["time"]} is ${if (data["available"] == true) "available" else "not available"}"
+            data.containsKey("available") -> {
+                val available = data["available"] as? Boolean ?: false
+                val startTimeMs = data["startTimeMs"] as? Long ?: 0L
+                val endTimeMs = data["endTimeMs"] as? Long ?: 0L
+                val status = if (available) "available" else "not available"
+
+                //formate t=date time from millis to human readable
+                val formatter =
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
+                val startTime = formatter.format(Instant.ofEpochMilli(startTimeMs))
+                val endTime = formatter.format(Instant.ofEpochMilli(endTimeMs))
+                "Time slot from $startTime to $endTime is $status"
+            }
+
             data.containsKey("events") -> "Found ${(data["events"] as? List<*>)?.size ?: 0} upcoming events"
             else -> null
         }
