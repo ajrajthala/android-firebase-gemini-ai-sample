@@ -1,5 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
+import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
@@ -125,8 +126,10 @@ class GeminiOrchestrator(
                         candidate?.content?.parts?.forEach { part ->
                             when (part) {
                                 is TextPart -> {
-                                    modelTextParts.add(part)
-                                    emit(ChatStreamEvent.TextChunk(part.text))
+                                    if (part.text.isNotBlank()) {
+                                        modelTextParts.add(part)
+                                        emit(ChatStreamEvent.TextChunk(part.text))
+                                    }
                                 }
 
                                 is FunctionCallPart -> {
