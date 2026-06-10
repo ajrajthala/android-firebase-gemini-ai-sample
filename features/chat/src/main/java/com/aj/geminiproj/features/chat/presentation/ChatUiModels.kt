@@ -1,5 +1,8 @@
 package com.aj.geminiproj.features.chat.presentation
 
+import android.graphics.Bitmap
+import android.net.Uri
+import com.aj.geminiproj.core.model.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 
@@ -12,6 +15,9 @@ data class ChatUiState(
     val streamingText: String = "",
     val error: String? = null,
     val conversationId: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val selectedImageUri: Uri? = null,
+    val selectedImageBitmap: Bitmap? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val activeToolDisplay: String? = null, // For showing tool execution status in the UI
     val showPermissionRationale: Boolean = false,
@@ -29,6 +35,8 @@ sealed interface ChatUiEvent {
     data object OnRetry : ChatUiEvent
     data object OnDeleteChat : ChatUiEvent
     data object OnDismissError : ChatUiEvent
+    data class OnImageSelected(val imageUri: Uri, val bitmap: Bitmap) : ChatUiEvent
+    data object OnRemoveImage : ChatUiEvent
 }
 
 sealed interface ChatUiEffect {

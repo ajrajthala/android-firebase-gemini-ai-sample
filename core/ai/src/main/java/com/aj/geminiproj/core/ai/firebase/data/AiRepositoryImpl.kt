@@ -1,5 +1,6 @@
 package com.aj.geminiproj.core.ai.firebase.data
 
+import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.model.AiError
@@ -78,6 +79,36 @@ class AiRepositoryImpl(
             AiResult.Success("New Chat") // Fallback title on error
         }
     }
+
+    override suspend fun sendMessageWithImage(
+        message: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): AiResult<String> {
+        return try {
+            val response =
+                aiClient.generateContentWithImage(message, bitmap, history)
+            AiResult.Success(response)
+        } catch (e: Exception) {
+            AiResult.Error(AiError.fromThrowable(e))
+        }
+    }
+
+    override fun sendMessageWithImageStream(
+        message: String,
+        bitmap: Bitmap,
+        history: List<ChatMessage>
+    ): Flow<StreamState<String>> = flow {
+        emit(StreamState.Loading)
+        var accumulatedText = ""
+        aiClient.generateContentWithImageStream(message, bitmap, history)
+            .collect { chunk ->
+                accumulatedText += chunk
+                emit(StreamState.Streaming(accumulatedText, isComplete = false))
+            }
+        emit(StreamState.Success(accumulatedText))
+
+    }.catch { e -> emit(StreamState.Error(AiError.fromThrowable(e).message)) }
 
     override suspend fun sendMessageWithTools(
         message: String,

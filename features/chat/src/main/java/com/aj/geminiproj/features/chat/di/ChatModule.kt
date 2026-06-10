@@ -10,6 +10,8 @@ import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithImageStreamUseCase
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithImageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithAgentUseCase
 import com.aj.geminiproj.features.chat.presentation.ChatViewModel
 import org.koin.core.module.dsl.viewModel
@@ -22,6 +24,8 @@ val chatModule = module {
     // Use cases
     factory { SendMessageUseCase(get()) }
     factory { SendMessageStreamUseCase(get()) }
+    factory { SendMessageWithImageUseCase(get()) }
+    factory { SendMessageWithImageStreamUseCase(get()) }
     factory { GetConversationUseCase(get()) }
     factory { DeleteConversationUseCase(get()) }
     factory { SaveConversationUseCase(get()) }
@@ -34,6 +38,7 @@ val chatModule = module {
         ChatViewModel(
             conversationId = params.get(),
             sendMessageStreamUseCase = get(),
+            sendMessageWithImageStreamUseCase = get(),
             getConversationUseCase = get(),
             clearConversationUseCase = get(),
             saveConversationUseCase = get(),
@@ -43,5 +48,4 @@ val chatModule = module {
             resetConversationUseCase = get(),
         )
     }
-
 }

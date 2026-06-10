@@ -1,5 +1,6 @@
 package com.aj.geminiproj.features.chat.domain.repository
 
+import android.graphics.Bitmap
 import com.aj.geminiproj.core.model.AiResult
 import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.core.model.chat.ChatConversation
@@ -10,6 +11,20 @@ import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
     // ============= Conversation Management =============
+
+    suspend fun sendMessageWithImage(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>,
+    ): AiResult<String>
+
+    suspend fun sendMessageWithImageStream(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>,
+    ): Flow<StreamState<String>>
 
     suspend fun getConversation(conversationId: String): ChatConversation
 

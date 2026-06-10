@@ -1,3 +1,4 @@
+import com.aj.geminiproj.addCommonTestDependencies
 import com.aj.geminiproj.addKoinDependencies
 import com.aj.geminiproj.addRoomDependencies
 import com.aj.geminiproj.configureAndroidCommon
@@ -19,6 +20,7 @@ class AndroidRoomConventionPlugin : Plugin<Project> {
             }
             addRoomDependencies()
             addKoinDependencies()
+            addCommonTestDependencies()
         }
     }
 }

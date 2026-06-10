@@ -1,3 +1,4 @@
+import com.aj.geminiproj.addCommonTestDependencies
 import com.aj.geminiproj.configureAndroidCommon
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
@@ -15,6 +16,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<LibraryExtension>{
                 configureAndroidCommon(this)
             }
+            addCommonTestDependencies()
         }
     }
 }

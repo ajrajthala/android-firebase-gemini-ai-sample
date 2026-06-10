@@ -43,7 +43,6 @@ lint/reports/
 # ============================================================
 # Kotlin
 # ============================================================
-.kotlin/
 *.kotlin_module
 
 # ============================================================
@@ -56,9 +55,10 @@ secrets.properties
 .env.*
 
 # ============================================================
-# Gradle wrapper (keep gradlew scripts, ignore jar)
+# Gradle wrapper (keep gradlew scripts + jar for CI)
 # ============================================================
-gradle/wrapper/gradle-wrapper.jar
+# gradle/wrapper/gradle-wrapper.jar  — DO NOT IGNORE; needed for CI
+!gradle/wrapper/gradle-wrapper.jar
 
 # ============================================================
 # Room database exports (optional — commit if you want schema history)

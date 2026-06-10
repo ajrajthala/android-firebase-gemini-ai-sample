@@ -13,7 +13,8 @@ val dataModule = module {
             androidContext(),
             AppDatabase::class.java,
             "geminiproj-db"
-        ).fallbackToDestructiveMigration(false)
+        ).addMigrations(AppDatabase.MIGRATION_1_2)
+            .fallbackToDestructiveMigration(false)
             .build()
     }
 

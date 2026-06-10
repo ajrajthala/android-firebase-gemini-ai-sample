@@ -2,7 +2,13 @@ package com.aj.geminiproj.features.chat.presentation
 
 import android.content.Intent
 import android.provider.Settings
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +57,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.MessageRole
+import com.aj.geminiproj.core.model.MessageStatus
 import com.aj.geminiproj.core.common.AndroidPermissionManager
 import com.aj.geminiproj.features.chat.presentation.components.ChatInput
 import com.aj.geminiproj.features.chat.presentation.components.MessageItem
@@ -60,6 +70,7 @@ import com.aj.geminiproj.ui.util.isTablet
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +90,7 @@ fun ChatScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
+    val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -87,6 +99,49 @@ fun ChatScreen(
     Log.d("ChatScreen", "isTablet: $isTablet")
     val horizontalPadding: Dp = remember(isTablet) { if (isTablet) 32.dp else 8.dp }
 
+    //=================== Image Capture Logic ===================
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                cameraImageUri?.let { uri ->
+                    val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream)
+                    }
+                    if (bitmap != null) {
+                        viewModel.onEvent(ChatUiEvent.OnImageSelected(uri, bitmap))
+                    }
+                }
+            }
+        }
+
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                val uri = createCameraImageUri(context)
+                cameraImageUri = uri
+                cameraLauncher.launch(uri)
+            }
+        }
+
+    //============ Gallery Setup =============
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let {
+                val persistentUri = copyUriToInternalStorage(context, it)
+                persistentUri?.let { pUri ->
+                    val bitmap = context.contentResolver.openInputStream(pUri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream)
+                    }
+                    if (bitmap != null) {
+                        viewModel.onEvent(ChatUiEvent.OnImageSelected(pUri, bitmap))
+                    }
+                }
+            }
+        }
+
+    // Scroll when messages list grows
+    LaunchedEffect(uiState.messages.size) {
     val permissionLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
             androidPermissionManager.onPermissionResult(isGranted)
@@ -286,6 +341,16 @@ fun ChatScreen(
                     text = inputText,
                     onTextChange = { viewModel.onEvent(ChatUiEvent.OnMessageTextChanged(it)) },
                     onSendClick = { viewModel.onEvent(ChatUiEvent.OnSendMessage) },
+                    onGalleryClicked = {
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onCameraClicked = {
+                        cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                    },
+                    selectedImageUri = uiState.selectedImageUri,
+                    onRemoveImage = { viewModel.onEvent(ChatUiEvent.OnRemoveImage) },
                     enabled = uiState.canSendMessage,
                     isTablet = isTablet
                 )
@@ -312,5 +377,30 @@ fun ChatScreen(
                 }
             )
         }
+    }
+}
+
+private fun createCameraImageUri(context: android.content.Context): Uri {
+    val imageFile = File(context.filesDir, "camera_image_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        imageFile
+    )
+}
+
+private fun copyUriToInternalStorage(context: android.content.Context, uri: Uri): Uri? {
+    val fileName = "chat_image_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, fileName)
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        Uri.fromFile(file)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }

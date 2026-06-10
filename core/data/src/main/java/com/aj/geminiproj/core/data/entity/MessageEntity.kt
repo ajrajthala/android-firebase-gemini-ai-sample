@@ -24,4 +24,5 @@ data class MessageEntity(
     val role: String,
     val status: String,
     val timeStamp: Long,
+    val imageUri: String? = null,
 )
