@@ -7,9 +7,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,9 +55,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
 import com.aj.geminiproj.core.common.AndroidPermissionManager
 import com.aj.geminiproj.features.chat.presentation.components.ChatInput
 import com.aj.geminiproj.features.chat.presentation.components.MessageItem
@@ -90,7 +84,6 @@ fun ChatScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
-    val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -140,8 +133,6 @@ fun ChatScreen(
             }
         }
 
-    // Scroll when messages list grows
-    LaunchedEffect(uiState.messages.size) {
     val permissionLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
             androidPermissionManager.onPermissionResult(isGranted)
@@ -156,19 +147,13 @@ fun ChatScreen(
             context = context
         )
     }
+
     // Scroll when messages list grows or streaming text updates
     LaunchedEffect(uiState.messages.size, uiState.streamingText) {
         if (uiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(uiState.messages.size)
         }
     }
-
-//    // scroll during streaming as text grows
-//    LaunchedEffect(uiState.streamingText) {
-//        if (uiState.isStreaming && uiState.streamingText.isNotEmpty()) {
-//            listState.animateScrollToItem(uiState.messages.size - 1)
-//        }
-//    }
 
     //Permission rationale snackbar
     LaunchedEffect(uiState.showPermissionRationale) {
@@ -199,7 +184,7 @@ fun ChatScreen(
         }
     }
 
-    // Handle UI effects
+    // Handle UI effects21
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
@@ -318,24 +303,6 @@ fun ChatScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-//
-
-                // Streaming message
-//                    if (uiState.isStreaming && uiState.streamingText.isNotEmpty()) {
-//                        item {
-//                            MessageItem(
-//                                message = ChatMessage(
-//                                    id = "streaming",
-//                                    content = uiState.streamingText,
-//                                    role = MessageRole.ASSISTANT,
-//                                    status = MessageStatus.STREAMING,
-//                                    timeStamp = System.currentTimeMillis()
-//                                ),
-//                                isTablet = isTablet
-//                            )
-//                        }
-//                    }
-//                }
                 //Input
                 ChatInput(
                     text = inputText,

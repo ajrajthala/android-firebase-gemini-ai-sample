@@ -2,7 +2,6 @@ package com.aj.geminiproj.features.chat.data.repository
 
 import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
-import com.aj.geminiproj.core.ai.firebase.data.AiRepository
 import com.aj.geminiproj.core.data.ConversationStore
 import com.aj.geminiproj.core.model.AiResult
 import com.aj.geminiproj.core.model.chat.ChatConversation

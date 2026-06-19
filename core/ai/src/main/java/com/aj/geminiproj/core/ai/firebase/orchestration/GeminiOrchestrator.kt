@@ -1,6 +1,5 @@
 package com.aj.geminiproj.core.ai.firebase.orchestration
 
-import android.util.Log
 import com.aj.geminiproj.core.ai.firebase.GenerativeModelFactory
 import com.aj.geminiproj.core.ai.firebase.di.GEMINI_MODEL
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
@@ -288,21 +287,27 @@ class GeminiOrchestrator(
      * Helper function to build a concise summary string for a tool execution result, used in the ToolCompleted event.
      */
     private fun buildSummary(functionName: String, data: Map<String, Any>): String? {
+        val formatter =
+            DateTimeFormatter.ofPattern("MMM d, h:mm a").withZone(ZoneId.systemDefault())
+
         return when {
             data.containsKey("displayName") -> "Found ${data["displayName"]} in contacts"
             data.containsKey("name") -> "Found ${data["name"]}"
-            data.containsKey("eventId") -> "Event ${data["title"]} on ${data["date"]} at ${data["time"]} created"
+            data.containsKey("eventId") -> {
+                val title = data["title"] as? String ?: "Event"
+                val startTimeMs = (data["startTimeMs"] as? Number)?.toLong() ?: 0L
+                val timeStr = if (startTimeMs > 0) "on ${formatter.format(Instant.ofEpochMilli(startTimeMs))}" else ""
+                "Event '$title' $timeStr created"
+            }
+
             data.containsKey("available") -> {
                 val available = data["available"] as? Boolean ?: false
-                val startTimeMs = data["startTimeMs"] as? Long ?: 0L
-                val endTimeMs = data["endTimeMs"] as? Long ?: 0L
+                val startTimeMs = (data["startTimeMs"] as? Number)?.toLong() ?: 0L
+                val endTimeMs = (data["endTimeMs"] as? Number)?.toLong() ?: 0L
                 val status = if (available) "available" else "not available"
 
-                //formate t=date time from millis to human readable
-                val formatter =
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
-                val startTime = formatter.format(Instant.ofEpochMilli(startTimeMs))
-                val endTime = formatter.format(Instant.ofEpochMilli(endTimeMs))
+                val startTime = if (startTimeMs > 0) formatter.format(Instant.ofEpochMilli(startTimeMs)) else "unknown"
+                val endTime = if (endTimeMs > 0) formatter.format(Instant.ofEpochMilli(endTimeMs)) else "unknown"
                 "Time slot from $startTime to $endTime is $status"
             }
 

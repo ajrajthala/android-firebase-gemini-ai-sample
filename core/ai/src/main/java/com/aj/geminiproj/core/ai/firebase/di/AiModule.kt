@@ -7,7 +7,7 @@ import com.aj.geminiproj.core.ai.firebase.agent.ConversationAgent
 import com.aj.geminiproj.core.ai.firebase.common.AndroidLogger
 import com.aj.geminiproj.core.ai.firebase.common.Logger
 import com.aj.geminiproj.core.ai.firebase.context.AgentContextBuilder
-import com.aj.geminiproj.core.ai.firebase.data.AiRepository
+import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.ai.firebase.data.AiRepositoryImpl
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolDispatcher
 import com.aj.geminiproj.core.ai.firebase.dispatcher.ToolValidator

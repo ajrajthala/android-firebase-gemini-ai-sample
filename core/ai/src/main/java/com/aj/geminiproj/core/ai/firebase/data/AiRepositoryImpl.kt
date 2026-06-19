@@ -2,6 +2,7 @@ package com.aj.geminiproj.core.ai.firebase.data
 
 import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
+import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.model.AiError
 import com.aj.geminiproj.core.model.AiResult

@@ -16,10 +16,9 @@ import com.aj.geminiproj.features.chat.domain.usecase.ResetConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveConversationUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SaveMessageUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageStreamUseCase
-import com.aj.geminiproj.features.chat.domain.usecase.SendMessageUseCase
-import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithImageStreamUseCase
 import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithAgentUseCase
-import com.aj.geminiproj.features.chat.presentation.ChatUiEffect.*
+import com.aj.geminiproj.features.chat.domain.usecase.SendMessageWithImageStreamUseCase
+import com.aj.geminiproj.features.chat.presentation.ChatUiEffect.ShowError
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +62,11 @@ class ChatViewModel(
             }
 
             ChatUiEvent.OnSendMessage -> {
-                sendMessageWithTools(true)
+                if (_uiState.value.selectedImageBitmap != null) {
+                    sendMessage(true)
+                } else {
+                    sendMessageWithTools(true)
+                }
             }
 
             ChatUiEvent.OnRetry -> {
@@ -151,6 +154,8 @@ class ChatViewModel(
             _uiState.update { it.copy(isStreaming = false, isLoading = true) }
             _uiEffect.send(ChatUiEffect.ClearInput)
 
+            val historyBeforeCurrent = _uiState.value.messages
+
             val userMessage = ChatMessage(
                 id = UUID.randomUUID().toString(),
                 content = messageText,
@@ -181,13 +186,13 @@ class ChatViewModel(
                     message = messageText,
                     bitmap = bitmap,
                     conversationId = currentConversationId,
-                    conversationHistory = _uiState.value.messages
+                    conversationHistory = historyBeforeCurrent
                 )
             } else {
                 sendMessageStreamUseCase(
                     messageText,
                     currentConversationId,
-                    _uiState.value.messages
+                    historyBeforeCurrent
                 )
             }
 
@@ -218,6 +223,7 @@ class ChatViewModel(
             _uiState.update { it.copy(isStreaming = false, isLoading = true) }
             _uiEffect.send(ChatUiEffect.ClearInput)
 
+            val historyBeforeCurrent = _uiState.value.messages
             val userMessage = buildUserMessage(messageText)
 
             _inputText.update { "" }
@@ -231,7 +237,7 @@ class ChatViewModel(
             // Send message to AI
             sendMessageWithAgentUseCase.invoke(
                 userMessage = messageText,
-                fullHistory = _uiState.value.messages,
+                fullHistory = historyBeforeCurrent,
             ).collect { event ->
                 handleChatStreamEvent(event, currentConversationId)
             }
