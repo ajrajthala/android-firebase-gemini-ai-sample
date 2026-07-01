@@ -22,4 +22,5 @@ val dataModule = module {
     single { get<AppDatabase>().messageDao() }
     single<ConversationStore> { ConversationStoreImpl(get(), get()) }
 
+
 }

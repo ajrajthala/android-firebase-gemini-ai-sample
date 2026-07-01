@@ -2,8 +2,10 @@ package com.aj.geminiproj.core.ai.firebase.domain
 
 import android.graphics.Bitmap
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
 
 interface AiRepository {
@@ -33,4 +35,12 @@ interface AiRepository {
         history: List<ChatMessage>
     ): Flow<StreamState<String>>
 
+    suspend fun sendMessageWithTools(
+        message: String,
+        systemPrompt: String,
+        activeTools: List<Tool>,
+        conversationHistory: List<ChatMessage> = emptyList(),
+        fewShotPrimer: String? = null,
+        turnId: String,
+    ): Flow<ChatStreamEvent>
 }

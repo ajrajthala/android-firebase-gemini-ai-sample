@@ -22,6 +22,12 @@ sealed class AiError : Exception() {
     companion object {
         fun fromThrowable(throwable: Throwable): AiError {
             return when {
+                throwable.javaClass.simpleName == "QuotaExceededException" ||
+                        throwable.message?.contains(
+                            "quota exceeded",
+                            ignoreCase = true
+                        ) == true -> RateLimitError("Quota exceeded. Please check your plan or try again later.")
+
                 throwable.message?.contains("network", ignoreCase = true) == true -> TimeoutError()
                 throwable.message?.contains(
                     "rate limit",

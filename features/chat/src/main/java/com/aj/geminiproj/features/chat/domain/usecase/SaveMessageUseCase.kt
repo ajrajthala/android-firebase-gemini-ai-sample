@@ -1,6 +1,6 @@
 package com.aj.geminiproj.features.chat.domain.usecase
 
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import com.aj.geminiproj.features.chat.domain.repository.ChatRepository
 
 class SaveMessageUseCase(private val repository: ChatRepository) {

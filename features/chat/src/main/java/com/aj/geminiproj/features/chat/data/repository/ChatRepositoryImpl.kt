@@ -4,54 +4,20 @@ import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
 import com.aj.geminiproj.core.data.ConversationStore
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.tool.Tool
 import com.aj.geminiproj.features.chat.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 
 class ChatRepositoryImpl(
     private val aiRepository: AiRepository,
-    private val conversationStore: ConversationStore,
+    private val conversationStore: ConversationStore,          // For persistence
 ) : ChatRepository {
 
-
-    override suspend fun sendMessage(
-        message: String,
-        conversationId: String,
-    ): AiResult<ChatMessage> {
-        val conversation = conversationStore.getById(conversationId)
-        return aiRepository.sendMessage(message, conversation?.messages ?: emptyList())
-    }
-
-    override suspend fun sendMessageStream(
-        message: String,
-        conversationId: String,
-        conversationHistory: List<ChatMessage>,
-    ): Flow<StreamState<String>> {
-        return aiRepository.sendMessageStream(message, conversationHistory)
-    }
-
-    override suspend fun sendMessageWithImage(
-        message: String,
-        conversationId: String,
-        bitmap: Bitmap,
-        conversationHistory: List<ChatMessage>
-    ): AiResult<String> {
-       return aiRepository.sendMessageWithImage(message, bitmap, conversationHistory)
-    }
-
-    override suspend fun sendMessageWithImageStream(
-        message: String,
-        conversationId: String,
-        bitmap: Bitmap,
-        conversationHistory: List<ChatMessage>
-    ): Flow<StreamState<String>> {
-       return aiRepository.sendMessageWithImageStream(message, bitmap, conversationHistory)
-    }
+    // ============= Conversation Management =============
 
     override suspend fun getConversation(conversationId: String): ChatConversation {
         return conversationStore.getById(conversationId) ?: ChatConversation(
@@ -86,5 +52,66 @@ class ChatRepositoryImpl(
         conversationId: String,
     ) {
         conversationStore.saveMessage(chatMessage, conversationId)
+    }
+
+    // ============= AI Operations =============
+
+    override suspend fun sendMessage(
+        message: String,
+        conversationId: String,
+    ): AiResult<ChatMessage> {
+        val conversation = conversationStore.getById(conversationId)
+        return aiRepository.sendMessage(message, conversation?.messages ?: emptyList())
+    }
+
+    override suspend fun sendMessageStream(
+        message: String,
+        conversationId: String,
+        conversationHistory: List<ChatMessage>,
+    ): Flow<StreamState<String>> {
+        return aiRepository.sendMessageStream(message, conversationHistory)
+    }
+
+    override suspend fun generateConversationTitle(
+        messages: List<ChatMessage>,
+    ): AiResult<String> {
+        return aiRepository.generateConversationTitle(messages)
+    }
+
+    override suspend fun sendMessageWithImage(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>
+    ): AiResult<String> {
+        return aiRepository.sendMessageWithImage(message, bitmap, conversationHistory)
+    }
+
+    override suspend fun sendMessageWithImageStream(
+        message: String,
+        conversationId: String,
+        bitmap: Bitmap,
+        conversationHistory: List<ChatMessage>
+    ): Flow<StreamState<String>> {
+        return aiRepository.sendMessageWithImageStream(message, bitmap, conversationHistory)
+    }
+
+    override suspend fun sendMessageWithTools(
+        message: String,
+        systemPrompt: String,
+        conversationId: String,
+        activeTools: List<Tool>,
+        conversationHistory: List<ChatMessage>,
+        fewShotPrimer: String?,
+        turnId: String
+    ): Flow<ChatStreamEvent> {
+        return aiRepository.sendMessageWithTools(
+            message,
+            systemPrompt,
+            activeTools,
+            conversationHistory,
+            fewShotPrimer,
+            turnId
+        )
     }
 }

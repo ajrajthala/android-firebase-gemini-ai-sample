@@ -2,10 +2,10 @@ package com.aj.geminiproj.core.data.db.mapper
 
 import com.aj.geminiproj.core.data.entity.ConversationEntity
 import com.aj.geminiproj.core.data.entity.MessageEntity
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
 
 fun ChatConversation.toEntity(): ConversationEntity =
     ConversationEntity(

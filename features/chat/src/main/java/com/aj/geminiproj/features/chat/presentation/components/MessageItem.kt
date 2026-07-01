@@ -26,9 +26,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
 
 @Composable
 fun MessageItem(message: ChatMessage, modifier: Modifier = Modifier, isTablet: Boolean = false) {

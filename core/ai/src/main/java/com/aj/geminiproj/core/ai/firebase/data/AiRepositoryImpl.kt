@@ -3,18 +3,24 @@ package com.aj.geminiproj.core.ai.firebase.data
 import android.graphics.Bitmap
 import com.aj.geminiproj.core.ai.firebase.FirebaseAiClient
 import com.aj.geminiproj.core.ai.firebase.domain.AiRepository
+import com.aj.geminiproj.core.ai.firebase.orchestration.GeminiOrchestrator
 import com.aj.geminiproj.core.model.AiError
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
 import com.aj.geminiproj.core.model.StreamState
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatStreamEvent
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
+import com.aj.geminiproj.core.model.tool.Tool
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import java.util.UUID
 
-class AiRepositoryImpl(private val aiClient: FirebaseAiClient) : AiRepository {
+class AiRepositoryImpl(
+    private val aiClient: FirebaseAiClient,
+    private val geminiOrchestrator: GeminiOrchestrator
+) : AiRepository {
     override suspend fun sendMessage(
         message: String,
         conversationHistory: List<ChatMessage>,
@@ -104,4 +110,22 @@ class AiRepositoryImpl(private val aiClient: FirebaseAiClient) : AiRepository {
         emit(StreamState.Success(accumulatedText))
 
     }.catch { e -> emit(StreamState.Error(AiError.fromThrowable(e).message)) }
+
+    override suspend fun sendMessageWithTools(
+        message: String,
+        systemPrompt: String,
+        activeTools: List<Tool>,
+        conversationHistory: List<ChatMessage>,
+        fewShotPrimer: String?,
+        turnId: String,
+    ): Flow<ChatStreamEvent> {
+        return geminiOrchestrator.sendChatMessageWithTools(
+            message,
+            systemPrompt,
+            conversationHistory,
+            activeTools,
+            fewShotPrimer,
+            turnId
+        )
+    }
 }

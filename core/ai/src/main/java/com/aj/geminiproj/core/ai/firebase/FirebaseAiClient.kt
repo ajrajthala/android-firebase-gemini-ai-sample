@@ -1,8 +1,8 @@
 package com.aj.geminiproj.core.ai.firebase
 
 import android.graphics.Bitmap
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 
 class FirebaseAiClient(val modelName: String = "gemini-3-flash-preview") {
     private val generativeModel by lazy {
-        Firebase.ai(backend = GenerativeBackend.Companion.googleAI())
+        Firebase.ai(backend = GenerativeBackend.googleAI())
             .generativeModel(modelName)
     }
 
@@ -40,7 +40,7 @@ class FirebaseAiClient(val modelName: String = "gemini-3-flash-preview") {
                     text(message.content)
                 }
 
-                MessageRole.ASSISTANT -> content(role = "assistant") {
+                MessageRole.ASSISTANT -> content(role = "model") {
                     text(message.content)
                 }
 
