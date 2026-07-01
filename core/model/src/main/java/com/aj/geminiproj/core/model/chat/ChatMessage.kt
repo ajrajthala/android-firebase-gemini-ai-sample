@@ -1,4 +1,4 @@
-package com.aj.geminiproj.core.model
+package com.aj.geminiproj.core.model.chat
 
 import kotlinx.serialization.Serializable
 
@@ -10,7 +10,8 @@ data class ChatMessage(
     val timeStamp: Long = System.currentTimeMillis(),
     val status: MessageStatus = MessageStatus.SENT,
     val metadata: MessageMetaData? = null,
-    val imageUri: String? = null
+    val imageUri: String? = null,
+    val toolSteps: List<String> = emptyList()
 )
 
 @Serializable
