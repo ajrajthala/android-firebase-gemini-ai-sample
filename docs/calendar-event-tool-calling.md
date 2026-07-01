@@ -1,11 +1,11 @@
-# Feature: Function Calling & Tools
+# Feature: Calendar Event Tool Calling
 
-> **Branch:** `feature/function-calling-tools`
+> **Branch:** `feature/calendar-event-tool-calling`
 > **Base:** `master`
 
 ## Overview
 
-This branch demonstrates **Gemini function calling** via the Firebase AI Logic SDK on Android.
+This branch demonstrates **Gemini function calling** via the Firebase AI Logic SDK on Android, focused on smart calendar event scheduling.
 
 Instead of Gemini only responding with text, it can now call real device functions — reading contacts, checking your calendar, and creating events — and synthesize the results into a natural language response.
 

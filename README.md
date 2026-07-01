@@ -12,6 +12,7 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 - 🗂️ **Chat History** - Persistent storage using Room database
 - 📱 **Responsive Design** - Optimized for both mobile and tablet screens
 - 🏗️ **Multi-Modular Architecture** - Scalable feature-based module structure
+- 📅 **Smart Calendar Event Scheduling** - Tool/function calling enables natural-language scheduling: Gemini can resolve contacts, check availability, and create calendar events automatically. See `docs/calendar-event-tool-calling.md` and the `:tools:calendar` module for implementation details.
 - 🚀 **Modern Tech Stack** - Kotlin, Compose, Coroutines, and more
 - 🎨 **Material Design 3** - Beautiful and intuitive UI
 
@@ -66,6 +67,7 @@ geminiproj/
 │   ├── chat/                     # Chat feature
 │   ├── image/                    # Image generation feature (Coming soon)
 │   └── text/                     # Text generation utilities
+├── tools/                        # Tools and integrations (e.g., calendar-event-tool-calling)
 └── build-logic/                  # Custom Gradle plugins & conventions
 ```
 
@@ -141,6 +143,10 @@ Or simply run from Android Studio: `Shift + F10` (or `Run` button)
 - **features/chat** - Main chat UI and chat history
 - **features/image** - Image generation (Coming soon)
 - **features/text** - Text generation utilities
+
+### Tools Modules
+
+- **tools/calendar-event-tool-calling** - Tool module demonstrating function/tool calling for calendar-event automation; see `docs/calendar-event-tool-calling.md` for full documentation.
 
 ## Build Configuration
 
