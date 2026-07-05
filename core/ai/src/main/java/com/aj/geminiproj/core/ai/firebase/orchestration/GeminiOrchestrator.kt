@@ -270,7 +270,12 @@ class GeminiOrchestrator(
             tracer.logTurnError(e)
             e.printStackTrace()
             val message = when {
-                e is QuotaExceededException -> "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
+                e is QuotaExceededException -> {
+                    val quotaReason = getQuotaExceededReason(e)
+                    tracer.logTurnError(Throwable("QuotaExceededException: $quotaReason"))
+                    "AI quota exceeded. You've reached the free tier limit. Please try again later or upgrade your plan."
+                }
+
                 e.javaClass.simpleName == "ResponseStoppedException" -> "Content generation was stopped (e.g., due to safety filters or an internal issue). Please try a different prompt."
                 else -> "Something went wrong. Try again..."
             }
@@ -281,6 +286,70 @@ class GeminiOrchestrator(
                 )
             )
         }
+    }
+
+    /**
+     * Helper function to extract the specific reason for QuotaExceededException from the exception details.
+     * Checks the exception message for keywords indicating whether the limit is due to:
+     * - Daily request limit exceeded (requests_per_day, rpd)
+     * - Request per minute limit exceeded (requests_per_minute, rpm)
+     * - Token limit exceeded (input_token_count, tpm)
+     * Also extracts and logs the retry time if available.
+     */
+    private fun getQuotaExceededReason(e: QuotaExceededException): String {
+        val message = e.message ?: ""
+        val cause = e.cause?.message ?: ""
+        val fullMessage = "$message $cause"
+        val fullMessageLower = fullMessage.lowercase()
+
+        // Extract retry time if present
+        val retryTime = extractRetryTime(fullMessage)
+        val retryTimeStr = if (retryTime != null) " Retry after $retryTime seconds." else ""
+
+        val reason = when {
+            fullMessageLower.contains("input_token_count") || fullMessageLower.contains("tpm") -> {
+                "Token quota exceeded"
+            }
+
+            fullMessageLower.contains("requests_per_minute") || fullMessageLower.contains("rpm") -> {
+                "Request per minute quota exceeded"
+            }
+
+            fullMessageLower.contains("requests_per_day") || fullMessageLower.contains("rpd") -> {
+                "Daily request quota exceeded"
+            }
+
+            fullMessageLower.contains("daily") || fullMessageLower.contains("day") -> {
+                "Daily request quota exceeded"
+            }
+
+            fullMessageLower.contains("per minute") || fullMessageLower.contains("per_minute") -> {
+                "Request per minute quota exceeded"
+            }
+
+            fullMessageLower.contains("token") -> {
+                "Token quota exceeded"
+            }
+
+            else -> {
+                "Quota exceeded"
+            }
+        }
+
+        val logMessage = "QuotaExceededException - $reason$retryTimeStr Message: $message"
+        tracer.logTurnError(Throwable(logMessage))
+
+        return reason
+    }
+
+    /**
+     * Extracts retry time in seconds from the exception message if present.
+     * Looks for patterns like "Retry in X.XXs" or similar retry timing indicators.
+     */
+    private fun extractRetryTime(message: String): Double? {
+        val retryPattern =
+            Regex("""retry\s+(?:in|after)?\s+([\d.]+)\s*s(?:econds)?""", RegexOption.IGNORE_CASE)
+        return retryPattern.find(message)?.groupValues?.getOrNull(1)?.toDoubleOrNull()
     }
 
     /**
@@ -296,7 +365,8 @@ class GeminiOrchestrator(
             data.containsKey("eventId") -> {
                 val title = data["title"] as? String ?: "Event"
                 val startTimeMs = (data["startTimeMs"] as? Number)?.toLong() ?: 0L
-                val timeStr = if (startTimeMs > 0) "on ${formatter.format(Instant.ofEpochMilli(startTimeMs))}" else ""
+                val timeStr =
+                    if (startTimeMs > 0) "on ${formatter.format(Instant.ofEpochMilli(startTimeMs))}" else ""
                 "Event '$title' $timeStr created"
             }
 
@@ -306,8 +376,10 @@ class GeminiOrchestrator(
                 val endTimeMs = (data["endTimeMs"] as? Number)?.toLong() ?: 0L
                 val status = if (available) "available" else "not available"
 
-                val startTime = if (startTimeMs > 0) formatter.format(Instant.ofEpochMilli(startTimeMs)) else "unknown"
-                val endTime = if (endTimeMs > 0) formatter.format(Instant.ofEpochMilli(endTimeMs)) else "unknown"
+                val startTime =
+                    if (startTimeMs > 0) formatter.format(Instant.ofEpochMilli(startTimeMs)) else "unknown"
+                val endTime =
+                    if (endTimeMs > 0) formatter.format(Instant.ofEpochMilli(endTimeMs)) else "unknown"
                 "Time slot from $startTime to $endTime is $status"
             }
 
