@@ -19,6 +19,7 @@ class GetCalendarEventsForDayTool(
 
     companion object {
         private const val TAG = "GetCalendarEventsTool"
+        private const val MAX_ATTENDEES_TO_RETURN = 10
     }
 
     override val definition = ToolDefinition(
@@ -68,7 +69,13 @@ class GetCalendarEventsForDayTool(
                 put("endTime", event.endTime)
                 event.description?.let { put("description", it) }
                 event.location?.let { put("location", it) }
-                event.attendees?.let { put("attendees", it) }
+                event.attendees?.let {
+                    put("attendees", it.take(MAX_ATTENDEES_TO_RETURN))
+                    if (it.size > MAX_ATTENDEES_TO_RETURN) {
+                        put("totalAttendees", it.size)
+                        put("note", "Attendees list truncated for brevity.")
+                    }
+                }
             }
         }
 
