@@ -1,7 +1,7 @@
 package com.aj.geminiproj.core.data
 
-import com.aj.geminiproj.core.model.ChatConversation
-import com.aj.geminiproj.core.model.ChatMessage
+import com.aj.geminiproj.core.model.chat.ChatConversation
+import com.aj.geminiproj.core.model.chat.ChatMessage
 import kotlinx.coroutines.flow.Flow
 
 interface ConversationStore {

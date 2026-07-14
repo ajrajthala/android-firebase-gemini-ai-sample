@@ -1,9 +1,9 @@
 package com.aj.geminiproj.features.chat.domain.usecase
 
 import com.aj.geminiproj.core.model.AiResult
-import com.aj.geminiproj.core.model.ChatMessage
-import com.aj.geminiproj.core.model.MessageRole
-import com.aj.geminiproj.core.model.MessageStatus
+import com.aj.geminiproj.core.model.chat.ChatMessage
+import com.aj.geminiproj.core.model.chat.MessageRole
+import com.aj.geminiproj.core.model.chat.MessageStatus
 import com.aj.geminiproj.features.chat.domain.repository.ChatRepository
 import java.util.UUID
 

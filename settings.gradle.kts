@@ -22,12 +22,16 @@ dependencyResolutionManagement {
 
 rootProject.name = "AjGeminiProj"
 include(":app")
+
 include(":core:ai")
 include(":core:common")
 include(":core:data")
 include(":core:model")
+include(":core:ui")
 
 include(":features:chat")
 include(":features:image")
 include(":features:text")
-include(":core:ui")
+
+include(":tools:contacts")
+include(":tools:calendar")

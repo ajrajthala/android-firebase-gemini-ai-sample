@@ -9,13 +9,17 @@ android {
 
 dependencies {
     implementation(project(":core:ai"))
-    implementation(project(":core:model"))
     implementation(project(":core:data"))
+    implementation(project(":core:common"))
+    implementation(project(":core:model"))
     implementation(project(":core:ui"))
 
     implementation(project(":features:chat"))
     implementation(project(":features:image"))
     implementation(project(":features:text"))
+
+    implementation(project(":tools:contacts"))
+    implementation(project(":tools:calendar"))
 
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
