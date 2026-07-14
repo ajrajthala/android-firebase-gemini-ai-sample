@@ -31,9 +31,9 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 
 ### Demo
 
-| Text Chat | Image Analysis |
-| :---: | :---: |
-| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> |
+| Text Chat | Image Analysis | Smart Calendar Event |
+| :---: | :---: | :---: |
+| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> | <img src="docs/demo_smart_calendar_event_gif" width="300"/> |
 
 ## Tech Stack
 
