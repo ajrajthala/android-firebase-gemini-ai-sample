@@ -2,7 +2,9 @@
 
 Latest release: v1.0.0 — see `CHANGELOG.md` and `docs/release-notes/v1.0.0.md`
 
-A modern Android chat application powered by **Firebase AI** and **Gemini Flash**. This is a sample project demonstrating best practices in multi-modular Android development with Jetpack Compose, Kotlin Coroutines, and Firebase integration.
+A modern Android chat application powered by **Firebase AI** and **Gemini Flash**. This is a sample
+project demonstrating best practices in multi-modular Android development with Jetpack Compose,
+Kotlin Coroutines, and Firebase integration.
 
 > 📚 **Learning Project** | 🔓 **Open Source** | 🎯 **Production-Ready Architecture**
 
@@ -12,7 +14,9 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 - 🗂️ **Chat History** - Persistent storage using Room database
 - 📱 **Responsive Design** - Optimized for both mobile and tablet screens
 - 🏗️ **Multi-Modular Architecture** - Scalable feature-based module structure
-- 📅 **Smart Calendar Event Scheduling** - Tool/function calling enables natural-language scheduling: Gemini can resolve contacts, check availability, and create calendar events automatically. See `docs/calendar-event-tool-calling.md` and the `:tools:calendar` module for implementation details.
+- 📅 **Smart Calendar Event Scheduling** - Tool/function calling enables natural-language scheduling:
+  Gemini can resolve contacts, check availability, and create calendar events automatically. See
+  `docs/calendar-event-tool-calling.md` and the `:tools:calendar` module for implementation details.
 - 🚀 **Modern Tech Stack** - Kotlin, Compose, Coroutines, and more
 - 🎨 **Material Design 3** - Beautiful and intuitive UI
 
@@ -20,20 +24,21 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 
 ### Screenshots
 
-| Chat Screen | Chat History | Image Analysis |
-| :---: | :---: | :---: |
+|                   Chat Screen                    |                    Chat History                    |                        Image Analysis                         |
+|:------------------------------------------------:|:--------------------------------------------------:|:-------------------------------------------------------------:|
 | ![Chat Screen](docs/screenshots/chat_screen.png) | ![Chat History](docs/screenshots/chat_history.png) | ![Image Analysis](docs/screenshots/image_analysis_screen.png) |
 
 #### Tablet View
+
 <p align="center">
   <img src="docs/screenshots/tablet_view.png" alt="Tablet View" width="800"/>
 </p>
 
 ### Demo
 
-| Text Chat | Image Analysis |
-| :---: | :---: |
-| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> |
+|               Text Chat                |                    Image Analysis                     |                    Smart Calendar Event                     |
+|:--------------------------------------:|:-----------------------------------------------------:|:-----------------------------------------------------------:|
+| <img src="docs/demo.gif" width="300"/> | <img src="docs/demo_image_analysis.gif" width="300"/> | <img src="docs/demo_smart_calendar_event.gif" width="300"/> |
 
 ## Tech Stack
 
@@ -50,7 +55,8 @@ A modern Android chat application powered by **Firebase AI** and **Gemini Flash*
 
 ## Project Architecture
 
-This project follows a **multi-modular, feature-based architecture** for better scalability, testability, and team collaboration.
+This project follows a **multi-modular, feature-based architecture** for better scalability,
+testability, and team collaboration.
 
 ### Module Structure
 
@@ -106,11 +112,13 @@ The default package is `com.aj.geminiproj`. You need to rename it to your own:
 
 ### 3. Set Up Firebase
 
-Follow the official Firebase setup guide to create a new project and obtain the `google-services.json` file:
+Follow the official Firebase setup guide to create a new project and obtain the
+`google-services.json` file:
 
 👉 **[Firebase Setup Guide](https://firebase.google.com/docs/android/setup)**
 
 Steps summary:
+
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Create a new project
 3. Add Android app with your package name
@@ -146,11 +154,13 @@ Or simply run from Android Studio: `Shift + F10` (or `Run` button)
 
 ### Tools Modules
 
-- **tools/calendar-event-tool-calling** - Tool module demonstrating function/tool calling for calendar-event automation; see `docs/calendar-event-tool-calling.md` for full documentation.
+- **tools/calendar-event-tool-calling** - Tool module demonstrating function/tool calling for
+  calendar-event automation; see `docs/calendar-event-tool-calling.md` for full documentation.
 
 ## Build Configuration
 
-This project uses **custom Gradle plugins** (in `build-logic/`) to standardize module configurations:
+This project uses **custom Gradle plugins** (in `build-logic/`) to standardize module
+configurations:
 
 - `geminiproj-android-application-compose` - App module with Compose
 - `geminiproj-android-compose` - Compose library modules
@@ -161,7 +171,8 @@ This project uses **custom Gradle plugins** (in `build-logic/`) to standardize m
 
 ## Contributing
 
-We welcome contributions! This is a learning project, and PRs are encouraged to help improve the codebase.
+We welcome contributions! This is a learning project, and PRs are encouraged to help improve the
+codebase.
 
 ### Guidelines
 
@@ -181,12 +192,14 @@ We welcome contributions! This is a learning project, and PRs are encouraged to 
 ## Roadmap
 
 ### Current Version
+
 - ✅ Text chat with Gemini Flash
 - ✅ Chat history storage with Room
 - ✅ Mobile and tablet support
 - ✅ Modern Android architecture
 
 ### Coming Soon
+
 - 🚧 **Image Generation** - Generate images using Gemini's capabilities
 - 🚧 **Gemini Nano** - On-device inference for offline capabilities
 - 🚧 **Enhanced Persistence** - Cloud backup of chat history
@@ -197,10 +210,12 @@ We welcome contributions! This is a learning project, and PRs are encouraged to 
 ### Build Issues
 
 **Gradle sync fails:**
+
 - Invalidate caches: `File` → `Invalidate Caches` → `Invalidate and Restart`
 - Update Gradle: `./gradlew wrapper --gradle-version=latest`
 
 **Firebase setup issues:**
+
 - Ensure `google-services.json` is in the correct location (`app/` folder)
 - Verify your package name matches the Firebase project
 - Check that your API keys are enabled in Firebase Console
@@ -208,19 +223,22 @@ We welcome contributions! This is a learning project, and PRs are encouraged to 
 ### Runtime Issues
 
 **Chat not responding:**
+
 - Ensure you have internet connection
 - Check Firebase project credentials in `google-services.json`
 - Verify Gemini Flash API is enabled in your Firebase project
 
 ## License
 
-This project is open source and available under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+This project is open source and available under the **MIT License**. See the [LICENSE](LICENSE) file
+for details.
 
 ## Questions & Support
 
 - 📖 **Documentation:** Check the inline code comments and module README files
-- 🐛 **Found a bug?** Open an [Issue](https://github.com/yourusername/AjGeminiProj/issues)
-- 💭 **Have a question?** Start a [Discussion](https://github.com/yourusername/AjGeminiProj/discussions)
+- 🐛 **Found a bug?** Open an [Issue](https://github.com/ajrajthala/AjGeminiProj/issues)
+- 💭 **Have a question?** Start
+  a [Discussion](https://github.com/ajrajthala/AjGeminiProj/discussions)
 
 ---
 

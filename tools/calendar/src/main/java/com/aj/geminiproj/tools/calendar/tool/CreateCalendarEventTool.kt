@@ -64,6 +64,7 @@ class CreateCalendarEventTool(
         val failedAttendees =
             attendees.filterNot { email -> calendarRepository.addAttendee(eventId, email) }
 
+        val MAX_FAILED_LOG = 5
         return ToolResult.Success(
             data = buildMap {
                 put("created", true)
@@ -74,7 +75,10 @@ class CreateCalendarEventTool(
                 if (attendees.isNotEmpty()) {
                     put("attendeesRequested", attendees.size)
                     put("attendeesAdded", attendees.size - failedAttendees.size)
-                    put("attendeesFailed", failedAttendees)
+                    if (failedAttendees.isNotEmpty()) {
+                        put("failedAttendeesCount", failedAttendees.size)
+                        put("failedAttendeesSample", failedAttendees.take(MAX_FAILED_LOG))
+                    }
                 }
             }
         )
